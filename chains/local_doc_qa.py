@@ -60,7 +60,9 @@ def tree(filepath, ignore_dir_names=None, ignore_file_names=None):
 def load_file(filepath, sentence_size=SENTENCE_SIZE, using_zh_title_enhance=ZH_TITLE_ENHANCE):
     if filepath.lower().endswith(".md"):
         loader = UnstructuredFileLoader(filepath, mode="elements")
-        docs = loader.load()
+        textsplitter = ChineseTextSplitter(pdf=False, sentence_size=sentence_size)
+        docs = loader.load_and_split(text_splitter=textsplitter)
+        #docs = loader.load()
     elif filepath.lower().endswith(".txt"):
         loader = TextLoader(filepath, autodetect_encoding=True)
         textsplitter = ChineseTextSplitter(pdf=False, sentence_size=sentence_size)
@@ -222,19 +224,52 @@ class LocalDocQA:
         except Exception as e:
             logger.error(e)
             return None, [one_title]
+    
+    #Luming added 20230630
+    def load_selected_file_knowledge(self, doc_list):
+        docs = []
+        for file in doc_list:
+            docs += load_file(file)
+        partial_vector = MyFAISS.from_documents(docs, self.embeddings)  ##docs 为Document列表
+        return partial_vector
+    
+    
+    def similarity_search_within_docx_files(self, vector_store, query, loaded_files):
+        match_doc_names = vector_store.compare_similarity_query_doc(query, loaded_files, doc_name_mode=True)
+        #print("OUTPUT match_doc_name: ", match_doc_names)
+        if(len(match_doc_names)>0):
+            partial_vectorstore = self.load_selected_file_knowledge(match_doc_names) #inputs=[select_vs, files, sentence_size, chatbot, vs_add, vs_add]
+            related_docs_with_score, len_context = partial_vectorstore.similarity_search_with_score(query, k=self.top_k, match_docs=match_doc_names,)
+        if(len(match_doc_names) == 0 or len_context < self.chunk_size*self.top_k): # Cannot get sufficient information from local knowledge
+            print("IN regenerate answer")
+            related_docs_with_score, _ = vector_store.similarity_search_with_score(query, k=self.top_k, match_docs = [])
+        return related_docs_with_score
+    
 
-    def get_knowledge_based_answer(self, query, vs_path, chat_history=[], streaming: bool = STREAMING):
+    def get_knowledge_based_answer(self, query, vs_path, loaded_files=[], chat_history=[], streaming: bool = STREAMING):
         vector_store = load_vector_store(vs_path, self.embeddings)
         vector_store.chunk_size = self.chunk_size
         vector_store.chunk_conent = self.chunk_conent
         vector_store.score_threshold = self.score_threshold
-        related_docs_with_score = vector_store.similarity_search_with_score(query, k=self.top_k)
+        #Luming modified 20230630
+        #print("DEBUG, ", query, loaded_files)
+        #if not len(loaded_files):
+        #   for d in os.listdir(DOC_PATH):
+        #       if os.path.isfile(DOC_PATH+'/'+d):
+        #            loaded_files.append("data/data_docx/"+d)
+        #   print("DEBUG, ", loaded_files)
+            
+        if loaded_files[0].endswith(".docx"):
+            related_docs_with_score = self.similarity_search_within_docx_files(vector_store, query, loaded_files)
+        else:
+            related_docs_with_score, _ = vector_store.similarity_search_with_score(query, k=self.top_k, match_docs = [])
+        #print("OUTPUT related_docs_with_score:", related_docs_with_score, len_context)
         torch_gc()
         if len(related_docs_with_score) > 0:
             prompt = generate_prompt(related_docs_with_score, query)
         else:
             prompt = query
-
+        #print("OUTPUT prompt:", prompt)
         for answer_result in self.llm.generatorAnswer(prompt=prompt, history=chat_history,
                                                       streaming=streaming):
             resp = answer_result.llm_output["answer"]
@@ -243,6 +278,9 @@ class LocalDocQA:
             response = {"query": query,
                         "result": resp,
                         "source_documents": related_docs_with_score}
+            #print("OUTPUT response:", response)
+            #print("OUTPUT history:", history)
+            
             yield response, history
 
     # query      查询内容

@@ -12,7 +12,6 @@ REPLY_WITH_SOURCE = True
 
 
 def main():
-
     llm_model_ins = shared.loaderLLM()
     llm_model_ins.history_len = LLM_HISTORY_LEN
 
@@ -27,22 +26,26 @@ def main():
         # 判断 filepath 是否为空，如果为空的话，重新让用户输入,防止用户误触回车
         if not filepath:
             continue
-        vs_path, _ = local_doc_qa.init_knowledge_vector_store(filepath)
+        vs_path, load_files = local_doc_qa.init_knowledge_vector_store(filepath)
+    #print("OUTPUT load_files:", load_files)
     history = []
     while True:
         query = input("Input your question 请输入问题：")
         last_print_len = 0
         for resp, history in local_doc_qa.get_knowledge_based_answer(query=query,
                                                                      vs_path=vs_path,
+                                                                     loaded_files=load_files,
                                                                      chat_history=history,
-                                                                     streaming=STREAMING):
+                                                                     streaming=STREAMING
+                                                                     ): #Luming modified 20230614
             if STREAMING:
                 print(resp["result"][last_print_len:], end="", flush=True)
                 last_print_len = len(resp["result"])
             else:
                 print(resp["result"])
         if REPLY_WITH_SOURCE:
-            source_text = [f"""出处 [{inum + 1}] {os.path.split(doc.metadata['source'])[-1]}：\n\n{doc.page_content}\n\n"""
+            #print("\n\nOUTPUT history:",history)
+            source_text = [f"""出处 [{inum + 1}] {os.path.split(doc.metadata['source'])[-1]}：\n\n{doc.page_content+" "+ str(doc.metadata['score'])}\n\n"""
                            # f"""相关度：{doc.metadata['score']}\n\n"""
                            for inum, doc in
                            enumerate(resp["source_documents"])]

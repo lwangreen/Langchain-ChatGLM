@@ -175,3 +175,7 @@ embedding/*
 pyrightconfig.json
 loader/tmp_files
 flagged/*
+
+#Local data
+data/*
+chatGLM130B/*
