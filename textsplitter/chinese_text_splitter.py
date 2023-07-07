@@ -2,7 +2,7 @@ from langchain.text_splitter import CharacterTextSplitter
 import re
 from typing import List
 from configs.model_config import SENTENCE_SIZE
-
+import docx
 
 class ChineseTextSplitter(CharacterTextSplitter):
     def __init__(self, pdf: bool = False, sentence_size: int = SENTENCE_SIZE, **kwargs):
@@ -24,6 +24,18 @@ class ChineseTextSplitter(CharacterTextSplitter):
                 sent_list.append(ele)
         return sent_list
 
+    # --------------------------------------------------------------------------------------------------------
+    # Luming add comments 20230620
+    # Langchain-ChatGLM.local_doc_qa.load_file() initialize ChineseTextSplitter or UnstructuredFileLoader
+    # call loader.load() or loader.load_and_split()
+    # For loader.load(), no split_text calling
+    # For loader.load_and_split(textsplitter):
+    # UnstructuredFileLoader extended from UnstructuredBaseLoader, the function calling goes to BaseLoader which is the parent
+    # class of UnstructuredBaseLoader.load_and_split() calls textsplitter.split_text(), which is the function below.
+    #
+    # For TextLoader (initialized in langchian.document_loader.text.py), it goes to BaseLoader (parent class of TextLoader) and
+    # calls load_and_split(), which direct back to the function below using textsplitter.split_text()
+    # ----------------------------------------------------------------------------------------------------------
     def split_text(self, text: str) -> List[str]:   ##此处需要进一步优化逻辑
         if self.pdf:
             text = re.sub(r"\n{3,}", r"\n", text)
@@ -58,3 +70,4 @@ class ChineseTextSplitter(CharacterTextSplitter):
                 id = ls.index(ele)
                 ls = ls[:id] + [i for i in ele1_ls if i] + ls[id + 1:]
         return ls
+
