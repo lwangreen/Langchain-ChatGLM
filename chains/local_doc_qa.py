@@ -1,6 +1,6 @@
 from langchain.embeddings.huggingface import HuggingFaceEmbeddings
 from vectorstores import MyFAISS
-from langchain.document_loaders import UnstructuredFileLoader, TextLoader, CSVLoader
+from langchain.document_loaders import UnstructuredFileLoader, TextLoader, CSVLoader, Docx2txtLoader
 from configs.model_config import *
 import datetime
 from textsplitter import ChineseTextSplitter
@@ -78,6 +78,10 @@ def load_file(filepath, sentence_size=SENTENCE_SIZE, using_zh_title_enhance=ZH_T
     elif filepath.lower().endswith(".csv"):
         loader = CSVLoader(filepath)
         docs = loader.load()
+    elif filepath.lower().endswith(".docx") or filepath.lower().endswith(".doc"):   # 单独读取 docx 类型文件，保留换行符。yunze 2023-07-10
+        loader = Docx2txtLoader(filepath)
+        textsplitter = ChineseTextSplitter(pdf=False, sentence_size=sentence_size)
+        docs = loader.load_and_split(text_splitter=textsplitter)
     else:
         loader = UnstructuredFileLoader(filepath, mode="elements")
         textsplitter = ChineseTextSplitter(pdf=False, sentence_size=sentence_size)
