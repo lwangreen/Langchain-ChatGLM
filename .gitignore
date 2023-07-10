@@ -179,3 +179,4 @@ flagged/*
 #Local data
 data/*
 chatGLM130B/*
+test.py
