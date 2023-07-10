@@ -245,11 +245,13 @@ class MyFAISS(FAISS, VectorStore):
         self.device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
         self.TOKENIZER = BertTokenizer.from_pretrained(
         #'shibing624/text2vec-base-chinese',
-        "GanymedeNil/text2vec-large-chinese",
+        # "GanymedeNil/text2vec-large-chinese",
+        embedding_model_dict[EMBEDDING_MODEL],      # 文件名相似度和正文相似度模型统一。yunze 2023-07-10
         )
         self.MODEL = BertModel.from_pretrained(
         #'shibing624/text2vec-base-chinese'
-        "GanymedeNil/text2vec-large-chinese",
+        # "GanymedeNil/text2vec-large-chinese",
+        embedding_model_dict[EMBEDDING_MODEL],
         )
         self.MODEL.to(self.device)
 
