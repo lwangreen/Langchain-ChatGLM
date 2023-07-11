@@ -101,7 +101,6 @@ class MyFAISS(FAISS, VectorStore):
         cur_docs_len = 0
         store_len = len(self.index_to_docstore_id) #14967: 'a72a815c-d874-4b3d-a422-fc4f674a828b', 14968: '6da0d05f-a45d-4535-8fc1-3665e5ac481e', 14969: '63b3963b-5c21-4887-8236-c9dd89e53b6e'} 14970
         #print("OUTPUT index_to_docstore_id:", self.index_to_docstore_id, store_len)
-        rearrange_id_list = False
         min_index_score = 9999
         for j, i in enumerate(indices[0]):
             if i == -1 or 0 < self.score_threshold < scores[0][j]:
@@ -118,6 +117,8 @@ class MyFAISS(FAISS, VectorStore):
                     min_index_score = scores[0][j]
                 elif scores[0][j] - min_index_score > 100: # The following docs are not that related to the query - Luming modified 20230703
                     break
+            if cur_docs_len > self.chunk_size*k:
+                break
             #print("OUTOUT _id:", _id)
             doc = self.docstore.search(_id)
             print("OUTPUT doc, index, id & score:", doc, i, _id, scores[0][j])
@@ -137,7 +138,7 @@ class MyFAISS(FAISS, VectorStore):
             # Now can retrieve the entire block from one heading to another
             docs_len = len(doc.page_content)
             cur_docs_len += docs_len
-            if doc.page_content in selected_headings:
+            if doc.page_content.replace('\n', '') in selected_headings:
                 print("IN if doc.page_content in selected_headings")
                 if cur_docs_len < self.chunk_size*k:
                     id_list.append(i)
@@ -151,15 +152,15 @@ class MyFAISS(FAISS, VectorStore):
                             doc0 = self.docstore.search(_id0)
                             #if docs_len + len(doc0.page_content) > self.chunk_size or doc0.metadata["source"] != \
                             #        doc.metadata["source"]:
-                            if prev_doc0 != None and prev_doc0.page_content not in selected_headings:#deal with continuous headings
-                                if doc0.page_content in selected_headings or doc0.metadata["source"] != doc.metadata["source"]:
+                            if prev_doc0 != None and prev_doc0.page_content.replace('\n', '') not in selected_headings:#deal with continuous headings
+                                if doc0.page_content.replace('\n', '') in selected_headings or doc0.metadata["source"] != doc.metadata["source"]:
                                     break_flag = True
                                     break
                                 elif doc0.metadata["source"] == doc.metadata["source"]:
                                     docs_len += len(doc0.page_content)
                                     cur_docs_len += docs_len
                                     id_list.append(cur_index)
-                                    rearrange_id_list = True
+                                   
                             else:
                                     docs_len += len(doc0.page_content)
                                     cur_docs_len += docs_len
@@ -174,28 +175,65 @@ class MyFAISS(FAISS, VectorStore):
                 
                 temp_id_list = []
                 temp_id_list.append(i)
-                for k in range(1, max(i, store_len - i)):
-                    break_flag = False
-                    if "context_expand_method" in doc.metadata and doc.metadata["context_expand_method"] == "forward":
-                        expand_range = [i + k]
-                    elif "context_expand_method" in doc.metadata and doc.metadata["context_expand_method"] == "backward":
-                        expand_range = [i - k]
-                    else:
-                        expand_range = [i + k, i - k]
-                    for l in expand_range:
-                        if l not in temp_id_list and 0 <= l < len(self.index_to_docstore_id):
-                            _id0 = self.index_to_docstore_id[l]
+                # for k in range(1, max(i, store_len - i)):
+                #     break_flag = False
+                #     if "context_expand_method" in doc.metadata and doc.metadata["context_expand_method"] == "forward":
+                #         expand_range = [i + k]
+                #     elif "context_expand_method" in doc.metadata and doc.metadata["context_expand_method"] == "backward":
+                #         expand_range = [i - k]
+                #     else:
+                #         expand_range = [i + k, i - k]
+                #     for l in expand_range:
+                #         if l not in temp_id_list and 0 <= l < len(self.index_to_docstore_id):
+                #             _id0 = self.index_to_docstore_id[l]
+                #             doc0 = self.docstore.search(_id0)
+                #             if docs_len + len(doc0.page_content) > self.chunk_size or doc0.metadata["source"] != \
+                #                     doc.metadata["source"]:
+                #                 break_flag = True
+                #                 break
+                #             elif doc0.metadata["source"] == doc.metadata["source"]:
+                #                 docs_len += len(doc0.page_content)
+                #                 cur_docs_len += docs_len
+                #                 temp_id_list.append(l)
+                #                 rearrange_id_list = True
+                #     if break_flag:
+                #         break
+                
+                up_break_flag = False
+                down_break_flag = False
+                up_index = i-1
+                down_index = i+1
+                while True:
+                    if not up_break_flag:
+                        if up_index not in temp_id_list and 0 <= up_index < len(self.index_to_docstore_id):
+                            _id0 = self.index_to_docstore_id[up_index]
                             doc0 = self.docstore.search(_id0)
-                            if docs_len + len(doc0.page_content) > self.chunk_size or doc0.metadata["source"] != \
+                            if '\n' in doc0.page_content or doc0.metadata["source"] != \
                                     doc.metadata["source"]:
-                                break_flag = True
-                                break
+                                up_break_flag = True
+                                
                             elif doc0.metadata["source"] == doc.metadata["source"]:
                                 docs_len += len(doc0.page_content)
                                 cur_docs_len += docs_len
-                                temp_id_list.append(l)
-                                rearrange_id_list = True
-                    if break_flag:
+                                temp_id_list.append(up_index)
+                                
+                    if not down_break_flag:
+                        if down_index not in temp_id_list and 0 <= down_index < len(self.index_to_docstore_id):
+                            _id0 = self.index_to_docstore_id[down_index]
+                            doc0 = self.docstore.search(_id0)
+                            if (docs_len + len(doc0.page_content) > self.chunk_size and '\n' in doc0.page_content)\
+                                  or doc0.metadata["source"] != doc.metadata["source"]:
+                                down_break_flag = True
+                               
+                            elif doc0.metadata["source"] == doc.metadata["source"]:
+                                docs_len += len(doc0.page_content)
+                                cur_docs_len += docs_len
+                                temp_id_list.append(down_index)
+                    if not up_break_flag:
+                        up_index-=1
+                    if not down_break_flag:
+                        down_index+=1
+                    if up_break_flag and down_break_flag:
                         break
                 temp_id_list = sorted(temp_id_list)
                 id_list += temp_id_list
