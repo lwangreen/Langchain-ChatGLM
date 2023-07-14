@@ -241,10 +241,12 @@ class LocalDocQA:
     def similarity_search_within_docx_files(self, vector_store, query, loaded_files):
         match_doc_names = vector_store.compare_similarity_query_doc(query, loaded_files, doc_name_mode=True)
         #print("OUTPUT match_doc_name: ", match_doc_names)
-        if(len(match_doc_names)>0):
+        if(len(match_doc_names)>0 and USE_HIERARCHY_FAISS):
             partial_vectorstore = self.load_selected_file_knowledge(match_doc_names) #inputs=[select_vs, files, sentence_size, chatbot, vs_add, vs_add]
             related_docs_with_score, len_context = partial_vectorstore.similarity_search_with_score(query, k=self.top_k, match_docs=match_doc_names,)
-        if(len(match_doc_names) == 0 or len_context < self.chunk_size*self.top_k): # Cannot get sufficient information from local knowledge. # 放宽限制，移除长度限制 *self.top_k 用以扩大文档内搜索结果的适用范围。 yunze 2023-07-10
+        # if(len(match_doc_names) == 0 or len_context < self.chunk_size*self.top_k): # Cannot get sufficient information from local knowledge. # 放宽限制，移除长度限制 *self.top_k 用以扩大文档内搜索结果的适用范围。 yunze 2023-07-10
+        # if(len(match_doc_names) == 0): # Cannot get sufficient information from local knowledge. # 放宽限制，移除长度限制 *self.top_k 用以扩大文档内搜索结果的适用范围。 yunze 2023-07-10
+        else:
             print("IN regenerate answer")
             related_docs_with_score, _ = vector_store.similarity_search_with_score(query, k=self.top_k, match_docs = [])
         return related_docs_with_score
