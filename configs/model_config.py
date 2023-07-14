@@ -159,7 +159,7 @@ PROMPT_TEMPLATE = """已知信息：
 CACHED_VS_NUM = 1
 
 # 文本分句长度
-SENTENCE_SIZE = 100
+SENTENCE_SIZE = 500
 
 # 匹配后单段上下文长度
 CHUNK_SIZE = 250
@@ -206,3 +206,9 @@ BING_SUBSCRIPTION_KEY = ""
 # 通过增加标题判断，判断哪些文本为标题，并在metadata中进行标记；
 # 然后将文本与往上一级的标题进行拼合，实现文本信息的增强。
 ZH_TITLE_ENHANCE = False
+
+# 是否使用分级查询
+USE_HIERARCHY_FAISS = False
+
+# 是否使用 QA 数据集
+USE_QA_DATA = True
