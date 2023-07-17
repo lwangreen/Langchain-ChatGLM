@@ -81,12 +81,11 @@ class MyFAISS(FAISS, VectorStore):
 
     def list_docs(self):
         return list(set(v.metadata["source"] for v in self.docstore._dict.values()))
-    
 
-    def similarity_search_with_score_by_vector(
-            self, embedding: List[float], k: int = 5, selected_headings: List[str] = [] # Added loaded_files parameter - Luming modified 20230614
-    ) -> List[Document]:
-        #print("SUCCESS", loaded_files) #Luming modified 20230614
+
+    def similarity_search_by_vector(self, query: str, k: int = 5,):
+         #print("SUCCESS", loaded_files) #Luming modified 20230614
+        embedding = self.embedding_function(query)
         faiss = dependable_faiss_import()
         vector = np.array([embedding], dtype=np.float32)
         #print("OUTPUT vector:", vector, np.shape(vector))
@@ -95,6 +94,23 @@ class MyFAISS(FAISS, VectorStore):
             faiss.normalize_L2(vector)
         scores, indices = self.index.search(vector, k) #FAISS OUTPUT:[[351.794   366.41095 366.41095 366.41095 366.41095]] [[4096 2986 3479 4476 4762]]
         print("FAISS OUTPUT:", scores, indices)
+        return scores, indices
+
+
+    def get_doc_page_content(self, indices):
+        docs_page_content = []
+        for j, i in enumerate(indices[0]):
+            if i in self.index_to_docstore_id:
+                _id = self.index_to_docstore_id[i]
+                doc = self.docstore.search(_id)
+                docs_page_content.append(doc.page_content)
+        return docs_page_content
+    
+
+    def similarity_search_with_score_by_vector(
+            self, query: str, k: int = 5, selected_headings: List[str] = [] # Added loaded_files parameter - Luming modified 20230614
+    ) -> List[Document]:
+        scores, indices = self.similarity_search_by_vector(query, k)
         docs = []
         #id_set = set()
         id_list = list()
@@ -365,6 +381,13 @@ class MyFAISS(FAISS, VectorStore):
                 headings.append(p.text)
         return headings
     
+    def similarity_search_in_doc_for_autoprompt(self, query: str, k: int=5):
+        score, indices = self.similarity_search_by_vector(query, k)
+        doc_page_content = self.get_doc_page_content(indices)
+        return doc_page_content
+
+    #def cos_similarity_for_autoprompt(self, query, doc_page_contents):
+        
     # Luming modified 20230614
     def similarity_search_with_score(
         self, query: str, k: int = 4, match_docs: List[str]=[]
@@ -378,16 +401,15 @@ class MyFAISS(FAISS, VectorStore):
         Returns:
             List of Documents most similar to the query and score for each
         """ 
-        embedding = self.embedding_function(query)
         if(match_docs):
             selected_headings = []
             for f in match_docs:
                 selected_headings = self.read_docx_headings(f)
             print("OUTPUT headings:", selected_headings)
-            docs, len_context = self.similarity_search_with_score_by_vector(embedding, k, selected_headings=selected_headings)
+            docs, len_context = self.similarity_search_with_score_by_vector(query, k, selected_headings=selected_headings)
         else:
             print("OUTPUT Default generate answer")
-            docs, len_context = self.similarity_search_with_score_by_vector(embedding, k)
+            docs, len_context = self.similarity_search_with_score_by_vector(query, k)
         return docs, len_context
     
 # Mean Pooling - Take attention mask into account for correct averaging

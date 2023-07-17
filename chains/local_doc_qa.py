@@ -114,6 +114,12 @@ def generate_prompt(related_docs: List[str],
     return prompt
 
 
+def generate_autoprompt(doc_page_content: str,
+                    prompt_template: str = AUTOPROMPT_TEMPLATE, ) -> str:
+    prompt = prompt_template.replace("{context}", doc_page_content.replace('\n',''))
+    return prompt
+
+
 def search_result2docs(search_results):
     docs = []
     for result in search_results:
@@ -237,6 +243,12 @@ class LocalDocQA:
         partial_vector = MyFAISS.from_documents(docs, self.embeddings)  ##docs 为Document列表
         return partial_vector
     
+    #Luming added 20230712
+    def get_keywords_from_autoprompt():
+        keywords = []
+
+        return keywords
+
     # 在指定文档中搜索
     def similarity_search_within_docx_files(self, vector_store, query, loaded_files):
         match_doc_names = vector_store.compare_similarity_query_doc(query, loaded_files, doc_name_mode=True)
@@ -249,6 +261,13 @@ class LocalDocQA:
             related_docs_with_score, _ = vector_store.similarity_search_with_score(query, k=self.top_k, match_docs = [])
         return related_docs_with_score
     
+    def generate_intent_keywords(self, query_autoprompt):
+        answer_result = self.llm.generatorAnswer(prompt=query_autoprompt, streaming=False)
+        resp = next(answer_result).llm_output["answer"]
+        resp = resp.replace("意图：","").replace("关键词：","").replace("\n","").replace  ("，"," ")
+        print("OUTPUT resp:", resp)
+        return resp
+
 
     def get_knowledge_based_answer(self, query, vs_path, loaded_files=[], chat_history=[], streaming: bool = STREAMING):
         vector_store = load_vector_store(vs_path, self.embeddings)
@@ -257,16 +276,24 @@ class LocalDocQA:
         vector_store.score_threshold = self.score_threshold
         #Luming modified 20230630
         #print("DEBUG, ", query, loaded_files)
-        #if not len(loaded_files):
-        #   for d in os.listdir(DOC_PATH):
-        #       if os.path.isfile(DOC_PATH+'/'+d):
-        #            loaded_files.append("data/data_docx/"+d)
-        #   print("DEBUG, ", loaded_files)
-            
+        if not len(loaded_files):
+          for d in os.listdir(DOC_PATH):
+              if os.path.isfile(DOC_PATH+'/'+d):
+                   loaded_files.append("data/data_docx/"+d)
+          print("DEBUG, ", loaded_files)
+        # if AUTO_PROMPT: # Call Autoprompt
+        #     doc_page_contents = vector_store.similarity_search_in_doc_for_autoprompt(query, k=self.top_k)
+        #     print("OUTPUT doc_page_contents:", doc_page_contents)
+        #     for page_content in doc_page_contents:
+        #         query_autoprompt = generate_autoprompt(page_content)
+        #         intent_keywords = self.generate_intent_keywords(query_autoprompt)
+        #         print("OUTPUT intent_keywords:", intent_keywords)
+
         if loaded_files[0].endswith(".docx"):
             related_docs_with_score = self.similarity_search_within_docx_files(vector_store, query, loaded_files)
         else:
             related_docs_with_score, _ = vector_store.similarity_search_with_score(query, k=self.top_k, match_docs = [])
+        
         #print("OUTPUT related_docs_with_score:", related_docs_with_score, len_context)
         torch_gc()
         if len(related_docs_with_score) > 0:
