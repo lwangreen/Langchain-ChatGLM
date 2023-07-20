@@ -1,6 +1,7 @@
+import os
+os.environ['CUDA_VISIBLE_DEVICES']='1'  # 要放在py文件最开头，也就是import torch之前
 from configs.model_config import *
 from chains.local_doc_qa import LocalDocQA
-import os
 import nltk
 from models.loader.args import parser
 import models.shared as shared

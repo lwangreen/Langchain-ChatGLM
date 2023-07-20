@@ -80,7 +80,7 @@ class ChineseTextSplitter(CharacterTextSplitter):
             text = re.sub("\n\n", "", text)
         # print("split_text: ", text)
         # 保留原本文本的换行符\n，更换切割分隔符为\t。yunze 2023-07-10
-        text = re.sub(r'([;；.!?。！？\?])([^”’\n])', r"\1\t\2", text)  # 单字符断句符
+        text = re.sub(r'([;；!?。！？\?])([^”’\n])', r"\1\t\2", text)  # 单字符断句符   # 去除句点分隔符
         text = re.sub(r'(\.{6})([^"’”」』\n])', r"\1\t\2", text)  # 英文省略号
         text = re.sub(r'(\…{2})([^"’”」』\n])', r"\1\t\2", text)  # 中文省略号
         text = re.sub(r'([;；!?。！？\?]["’”」』]{0,2})([^;；!?，。！？\?\n])', r'\1\t\2', text)
@@ -90,13 +90,13 @@ class ChineseTextSplitter(CharacterTextSplitter):
         text = re.sub(r'([\n])([^;；!?，。！？\?])', r'\1\t\2', text) # 换行符单独处理。在原本 \n 之后加入分隔符 \t 保证分段也进行分句. yunze 2023-07-10
         ls = [i for i in text.split("\t") if i and re.search("[^\s]", i)]     # 改为 \t 换行；过滤空字符串和仅含有空白符的字符串
         ls = [re.sub(r'([\s]*)([^\s])', r'\2', i) for i in ls]  # 过滤句前空白符
-        ls = [sample for sample in ls if len(sample) >= 3]   # 过滤 3 个字符及以下的短句，过滤无意义短句，同时代替text.rstrip()的作用
         for ele in ls:
             if len(ele) > self.sentence_size:
-                ele1 = re.sub(r'([,，.]["’”」』]{0,2})([^,，.])', r'\1\t\2', ele)     # 逗号分句
+                ele1 = re.sub(r'([,，]["’”」』]{0,2})([^,，])', r'\1\t\2', ele)     # 逗号分句
                 ele1_ls = ele1.split("\t")
 
                 id = ls.index(ele)
                 ls = ls[:id] + [i for i in ele1_ls if i] + ls[id + 1:]
+        ls = [sample for sample in ls if len(sample) > 3]   # 过滤 3 个字符及以下的短句，过滤无意义短句，同时代替text.rstrip()的作用
         # print(ls)
         return ls

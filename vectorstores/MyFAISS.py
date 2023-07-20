@@ -107,6 +107,8 @@ class MyFAISS(FAISS, VectorStore):
         return docs_page_content
     
 
+
+
     def similarity_search_with_score_by_vector(
             self, query: str, k: int = 5, selected_headings: List[str] = [] # Added loaded_files parameter - Luming modified 20230614
     ) -> List[Document]:
@@ -154,7 +156,8 @@ class MyFAISS(FAISS, VectorStore):
             # Now can retrieve the entire block from one heading to another
             docs_len = len(doc.page_content)
             cur_docs_len += docs_len
-            if doc.page_content.replace('\n', '') in selected_headings:
+            page_content_in_headings = doc_page_content_in_headings(doc.page_content.replace('\n', ''), selected_headings)
+            if page_content_in_headings:
                 print("IN if doc.page_content in selected_headings")
                 if cur_docs_len < self.chunk_size*k:
                     id_list.append(i)
@@ -237,11 +240,15 @@ class MyFAISS(FAISS, VectorStore):
                         if down_index not in temp_id_list and 0 <= down_index < len(self.index_to_docstore_id):
                             _id0 = self.index_to_docstore_id[down_index]
                             doc0 = self.docstore.search(_id0)
-                            if (docs_len + len(doc0.page_content) > self.chunk_size and '\n' in doc0.page_content)\
-                                  or doc0.metadata["source"] != doc.metadata["source"]:
+                            if (USE_QA_DATA):   # QA data 只选取标题之后的第一个段落
+                                cond = ('\n' in doc0.page_content) or doc0.metadata["source"] != doc.metadata["source"]
+                            else:
+                                cond = (docs_len + len(doc0.page_content) > self.chunk_size and '\n' in doc0.page_content)\
+                                   or doc0.metadata["source"] != doc.metadata["source"]
+                            if (cond):
                                 down_break_flag = True
                                
-                            elif doc0.metadata["source"] == doc.metadata["source"]:
+                            if doc0.metadata["source"] == doc.metadata["source"]:   # elif 改为 if，以包括 \n 之前的最后一句话
                                 docs_len += len(doc0.page_content)
                                 cur_docs_len += docs_len
                                 temp_id_list.append(down_index)
@@ -346,32 +353,42 @@ class MyFAISS(FAISS, VectorStore):
 
         # Calculate cosine similarity
         similarities = calculate_similarity(new_vector, embeddings)
-        similarities = similarities.tolist()
-        #print("OUTPUT File Similarities:", similarities)
-        # Find top 2 maximum results
-        temp_max_similarity = -1
-        for i in range(0, k):
-            max_similarity = max(similarities)
-            if(max_similarity > temp_max_similarity):
-                temp_max_similarity = max_similarity
-            if max_similarity > 0.5:
-                if(temp_max_similarity - max_similarity > 0.15):
-                    break
-                max_similarities.append(max_similarity)
-                max_index = similarities.index(max_similarity)
-                max_indexes.append(max_index)
-                del similarities[max_index]
+        # similarities = similarities.tolist()
 
-            else:
-                continue
+        # 使用 similarity 的 topk。Yunze. 2023-07-14
+        topk_similarities = similarities.topk(k)
+        print(topk_similarities)
+        return topk_similarities.indices.to('cpu').numpy(), topk_similarities.values.to('cpu').numpy()
+
+        # print("OUTPUT File Similarities:", similarities)
+        # Find top 2 maximum results
+        # temp_max_similarity = -1
+        # for i in range(0, k):
+        #     if (similarities):   # 确保 similarities 长度不小于1
+        #         max_similarity = max(similarities)
+        #         if(max_similarity > temp_max_similarity):
+        #             temp_max_similarity = max_similarity
+        #         if max_similarity > 0:        # init: 0.5
+        #             if(temp_max_similarity - max_similarity > 0.15):
+        #                 break
+        #             max_similarities.append(max_similarity)
+        #             max_index = similarities.index(max_similarity)
+        #             max_indexes.append(max_index)
+        #             del similarities[max_index]
+
+        #         else:
+        #             continue
+        #     else:
+        #         break
         
-        return max_indexes, max_similarities #max_index.to('cpu').numpy(), max_similarity
+        # return max_indexes, max_similarities #max_index.to('cpu').numpy(), max_similarity
 
     def read_docx_headings(self, f):
         from docx import Document
         headings = []
         #for f in loaded_files:
-        cur_dir = os.getcwd()+r'/'+f
+        # cur_dir = os.getcwd()+r'/'+f    # 相对路径
+        cur_dir = os.path.abspath(f)
         #print("OUTPUT FILE", cur_dir)
         obj = Document(cur_dir)
         for p in obj.paragraphs:
@@ -382,7 +399,7 @@ class MyFAISS(FAISS, VectorStore):
         return headings
     
     def similarity_search_in_doc_for_autoprompt(self, query: str, k: int=5):
-        score, indices = self.similarity_search_by_vector(query, k)
+        _, indices = self.similarity_search_by_vector(query, k)
         doc_page_content = self.get_doc_page_content(indices)
         return doc_page_content
 
@@ -402,11 +419,11 @@ class MyFAISS(FAISS, VectorStore):
             List of Documents most similar to the query and score for each
         """ 
         if(match_docs):
-            selected_headings = []
+            headings_from_selected_docs = []
             for f in match_docs:
-                selected_headings = self.read_docx_headings(f)
-            print("OUTPUT headings:", selected_headings)
-            docs, len_context = self.similarity_search_with_score_by_vector(query, k, selected_headings=selected_headings)
+                headings_from_selected_docs += self.read_docx_headings(f)
+            print("OUTPUT headings:", headings_from_selected_docs)
+            docs, len_context = self.similarity_search_with_score_by_vector(query, k, selected_headings=headings_from_selected_docs)
         else:
             print("OUTPUT Default generate answer")
             docs, len_context = self.similarity_search_with_score_by_vector(query, k)
@@ -432,3 +449,8 @@ def clean_loaded_filenames(loaded_files):
         clean_loaded_files.append(filename.split("/")[-1].split(".")[-2])
     return clean_loaded_files
 
+def doc_page_content_in_headings(page_content, headings):
+    for h in headings:
+        if page_content in h:
+            return True
+    return False

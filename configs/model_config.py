@@ -119,10 +119,16 @@ llm_model_dict = {
         "provides": "FastChatOpenAILLM",  # 使用fastchat api时，需保证"provides"为"FastChatOpenAILLM"
         "api_base_url": "http://localhost:8000/v1"  # "name"修改为fastchat服务中的"api_base_url"
     },
+    "llama2-70b": {
+        "name": "llama2-70b",
+        "pretrained_model_name": "TheBloke/Llama-2-13B-chat-GGML",
+        "local_model_path": "models/LLMmodel/",
+        "provides": "LLamaLLM"
+        },
 }
 
 # LLM 名称
-LLM_MODEL = "chatglm-6b"
+LLM_MODEL = "vicuna-13b-hf"
 # 量化加载8bit 模型
 LOAD_IN_8BIT = False
 # Load the model with bfloat16 precision. Requires NVIDIA Ampere GPU.
@@ -162,7 +168,7 @@ AUTOPROMPT_TEMPLATE = """请总结出以下句子的意图和关键词，严格�
 CACHED_VS_NUM = 1
 
 # 文本分句长度
-SENTENCE_SIZE = 100
+SENTENCE_SIZE = 500
 
 # 匹配后单段上下文长度
 CHUNK_SIZE = 250
@@ -211,3 +217,8 @@ BING_SUBSCRIPTION_KEY = ""
 ZH_TITLE_ENHANCE = False
 
 AUTO_PROMPT = True
+# 是否使用分级查询
+USE_HIERARCHY_FAISS = True
+
+# 是否使用 QA 数据集
+USE_QA_DATA = False
