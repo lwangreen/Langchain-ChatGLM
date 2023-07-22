@@ -98,5 +98,5 @@ class ChineseTextSplitter(CharacterTextSplitter):
                 id = ls.index(ele)
                 ls = ls[:id] + [i for i in ele1_ls if i] + ls[id + 1:]
         ls = [sample for sample in ls if len(sample) > 3]   # 过滤 3 个字符及以下的短句，过滤无意义短句，同时代替text.rstrip()的作用
-        # print(ls)
+        #print("OUTOUT ls:",ls)
         return ls
