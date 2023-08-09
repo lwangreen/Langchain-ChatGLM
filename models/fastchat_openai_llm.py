@@ -1,4 +1,5 @@
 from abc import ABC
+<<<<<<< HEAD
 from langchain.chains.base import Chain
 from typing import (
     Any, Dict, List, Optional, Generator, Collection, Set,
@@ -33,6 +34,20 @@ import transformers
 
 logger = logging.getLogger(__name__)
 
+=======
+import requests
+from typing import Optional, List
+from langchain.llms.base import LLM
+
+from models.loader import LoaderCheckPoint
+from models.base import (RemoteRpcModel,
+                         AnswerResult)
+from typing import (
+    Collection,
+    Dict
+)
+
+>>>>>>> bc552302e9189af332f5ee655bd70d9a2e35b4d9
 
 def _build_message_template() -> Dict[str, str]:
     """
@@ -44,6 +59,7 @@ def _build_message_template() -> Dict[str, str]:
     }
 
 
+<<<<<<< HEAD
 # 将历史对话数组转换为文本格式
 def build_message_list(query, history: List[List[str]]) -> Collection[Dict[str, str]]:
     build_messages: Collection[Dict[str, str]] = []
@@ -79,12 +95,16 @@ class FastChatOpenAILLMChain(RemoteRpcModel, Chain, ABC):
     client: Any
     """Timeout for requests to OpenAI completion API. Default is 600 seconds."""
     max_retries: int = 6
+=======
+class FastChatOpenAILLM(RemoteRpcModel, LLM, ABC):
+>>>>>>> bc552302e9189af332f5ee655bd70d9a2e35b4d9
     api_base_url: str = "http://localhost:8000/v1"
     model_name: str = "chatglm-6b"
     max_token: int = 10000
     temperature: float = 0.01
     top_p = 0.9
     checkPoint: LoaderCheckPoint = None
+<<<<<<< HEAD
     # history = []
     history_len: int = 10
     api_key: str = ""
@@ -100,18 +120,30 @@ class FastChatOpenAILLMChain(RemoteRpcModel, Chain, ABC):
                  #  model_name:str="chatglm-6b",
                  #  api_key:str=""
                  ):
+=======
+    history = []
+    history_len: int = 10
+
+    def __init__(self, checkPoint: LoaderCheckPoint = None):
+>>>>>>> bc552302e9189af332f5ee655bd70d9a2e35b4d9
         super().__init__()
         self.checkPoint = checkPoint
 
     @property
+<<<<<<< HEAD
     def _chain_type(self) -> str:
         return "LLamaLLMChain"
+=======
+    def _llm_type(self) -> str:
+        return "FastChat"
+>>>>>>> bc552302e9189af332f5ee655bd70d9a2e35b4d9
 
     @property
     def _check_point(self) -> LoaderCheckPoint:
         return self.checkPoint
 
     @property
+<<<<<<< HEAD
     def input_keys(self) -> List[str]:
         """Will be whatever keys the prompt expects.
 
@@ -126,6 +158,13 @@ class FastChatOpenAILLMChain(RemoteRpcModel, Chain, ABC):
         :meta private:
         """
         return [self.output_key]
+=======
+    def _history_len(self) -> int:
+        return self.history_len
+
+    def set_history_len(self, history_len: int = 10) -> None:
+        self.history_len = history_len
+>>>>>>> bc552302e9189af332f5ee655bd70d9a2e35b4d9
 
     @property
     def _api_key(self) -> str:
@@ -136,7 +175,11 @@ class FastChatOpenAILLMChain(RemoteRpcModel, Chain, ABC):
         return self.api_base_url
 
     def set_api_key(self, api_key: str):
+<<<<<<< HEAD
         self.api_key = api_key
+=======
+        pass
+>>>>>>> bc552302e9189af332f5ee655bd70d9a2e35b4d9
 
     def set_api_base_url(self, api_base_url: str):
         self.api_base_url = api_base_url
@@ -144,6 +187,7 @@ class FastChatOpenAILLMChain(RemoteRpcModel, Chain, ABC):
     def call_model_name(self, model_name):
         self.model_name = model_name
 
+<<<<<<< HEAD
     def _create_retry_decorator(self) -> Callable[[Any], Any]:
         min_seconds = 1
         max_seconds = 60
@@ -257,3 +301,72 @@ if __name__ == "__main__":
     for answer_result in answer_result_stream_result['answer_result_stream']:
         resp = answer_result.llm_output["answer"]
         print(resp)
+=======
+    def _call(self, prompt: str, stop: Optional[List[str]] = None) -> str:
+        print(f"__call:{prompt}")
+        try:
+            import openai
+            # Not support yet
+            openai.api_key = "EMPTY"
+            openai.api_base = self.api_base_url
+        except ImportError:
+            raise ValueError(
+                "Could not import openai python package. "
+                "Please install it with `pip install openai`."
+            )
+        # create a chat completion
+        completion = openai.ChatCompletion.create(
+            model=self.model_name,
+            messages=self.build_message_list(prompt)
+        )
+        print(f"response:{completion.choices[0].message.content}")
+        print(f"+++++++++++++++++++++++++++++++++++")
+        return completion.choices[0].message.content
+
+    # 将历史对话数组转换为文本格式
+    def build_message_list(self, query) -> Collection[Dict[str, str]]:
+        build_message_list: Collection[Dict[str, str]] = []
+        history = self.history[-self.history_len:] if self.history_len > 0 else []
+        for i, (old_query, response) in enumerate(history):
+            user_build_message = _build_message_template()
+            user_build_message['role'] = 'user'
+            user_build_message['content'] = old_query
+            system_build_message = _build_message_template()
+            system_build_message['role'] = 'system'
+            system_build_message['content'] = response
+            build_message_list.append(user_build_message)
+            build_message_list.append(system_build_message)
+
+        user_build_message = _build_message_template()
+        user_build_message['role'] = 'user'
+        user_build_message['content'] = query
+        build_message_list.append(user_build_message)
+        return build_message_list
+
+    def generatorAnswer(self, prompt: str,
+                        history: List[List[str]] = [],
+                        streaming: bool = False):
+
+        try:
+            import openai
+            # Not support yet
+            openai.api_key = "EMPTY"
+            openai.api_base = self.api_base_url
+        except ImportError:
+            raise ValueError(
+                "Could not import openai python package. "
+                "Please install it with `pip install openai`."
+            )
+        # create a chat completion
+        completion = openai.ChatCompletion.create(
+            model=self.model_name,
+            messages=self.build_message_list(prompt)
+        )
+
+        history += [[prompt, completion.choices[0].message.content]]
+        answer_result = AnswerResult()
+        answer_result.history = history
+        answer_result.llm_output = {"answer": completion.choices[0].message.content}
+
+        yield answer_result
+>>>>>>> bc552302e9189af332f5ee655bd70d9a2e35b4d9

@@ -1,9 +1,14 @@
 from abc import ABC, abstractmethod
+<<<<<<< HEAD
 from typing import Any, Dict, List, Optional, Generator
+=======
+from typing import Optional, List
+>>>>>>> bc552302e9189af332f5ee655bd70d9a2e35b4d9
 import traceback
 from collections import deque
 from queue import Queue
 from threading import Thread
+<<<<<<< HEAD
 from langchain.callbacks.manager import CallbackManagerForChainRun
 from models.loader import LoaderCheckPoint
 from pydantic import BaseModel
@@ -25,6 +30,15 @@ class ListenerToken:
 
 
 class AnswerResult(BaseModel):
+=======
+
+import torch
+import transformers
+from models.loader import LoaderCheckPoint
+
+
+class AnswerResult:
+>>>>>>> bc552302e9189af332f5ee655bd70d9a2e35b4d9
     """
     消息实体
     """
@@ -32,6 +46,7 @@ class AnswerResult(BaseModel):
     llm_output: Optional[dict] = None
 
 
+<<<<<<< HEAD
 class AnswerResultStream:
     def __init__(self, callback_func=None):
         self.callback_func = callback_func
@@ -148,6 +163,8 @@ class Iteratorize:
         self.stop_now = True
 
 
+=======
+>>>>>>> bc552302e9189af332f5ee655bd70d9a2e35b4d9
 class BaseAnswer(ABC):
     """上层业务包装器.用于结果生成统一api调用"""
 
@@ -155,6 +172,7 @@ class BaseAnswer(ABC):
     @abstractmethod
     def _check_point(self) -> LoaderCheckPoint:
         """Return _check_point of llm."""
+<<<<<<< HEAD
     def generatorAnswer(self,
                         inputs: Dict[str, Any],
                         run_manager: Optional[CallbackManagerForChainRun] = None,) -> Generator[Any, str, bool]:
@@ -174,4 +192,19 @@ class BaseAnswer(ABC):
                          inputs: Dict[str, Any],
                          run_manager: Optional[CallbackManagerForChainRun] = None,
                          generate_with_callback: AnswerResultStream = None) -> None:
+=======
+
+    @property
+    @abstractmethod
+    def _history_len(self) -> int:
+        """Return _history_len of llm."""
+
+    @abstractmethod
+    def set_history_len(self, history_len: int) -> None:
+        """Return _history_len of llm."""
+
+    def generatorAnswer(self, prompt: str,
+                        history: List[List[str]] = [],
+                        streaming: bool = False):
+>>>>>>> bc552302e9189af332f5ee655bd70d9a2e35b4d9
         pass

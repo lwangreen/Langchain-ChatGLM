@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 
 from abc import ABC
 from langchain.chains.base import Chain
@@ -20,13 +21,35 @@ class InvalidScoreLogitsProcessor(LogitsProcessor):
         # llama-cpp模型返回的是list,为兼容性考虑，需要判断input_ids和scores的类型，将list转换为torch.Tensor
         input_ids = torch.tensor(input_ids) if isinstance(input_ids, list) else input_ids
         scores = torch.tensor(scores) if isinstance(scores, list) else scores
+=======
+from abc import ABC
+
+from langchain.llms.base import LLM
+import random
+import torch
+import transformers
+from transformers.generation.logits_process import LogitsProcessor
+from transformers.generation.utils import LogitsProcessorList, StoppingCriteriaList
+from typing import Optional, List, Dict, Any
+from models.loader import LoaderCheckPoint
+from models.base import (BaseAnswer,
+                         AnswerResult)
+
+
+class InvalidScoreLogitsProcessor(LogitsProcessor):
+    def __call__(self, input_ids: torch.LongTensor, scores: torch.FloatTensor) -> torch.FloatTensor:
+>>>>>>> bc552302e9189af332f5ee655bd70d9a2e35b4d9
         if torch.isnan(scores).any() or torch.isinf(scores).any():
             scores.zero_()
             scores[..., 5] = 5e4
         return scores
 
 
+<<<<<<< HEAD
 class LLamaLLMChain(BaseAnswer, Chain, ABC):
+=======
+class LLamaLLM(BaseAnswer, LLM, ABC):
+>>>>>>> bc552302e9189af332f5ee655bd70d9a2e35b4d9
     checkPoint: LoaderCheckPoint = None
     # history = []
     history_len: int = 3
@@ -40,16 +63,38 @@ class LLamaLLMChain(BaseAnswer, Chain, ABC):
     min_length: int = 0
     logits_processor: LogitsProcessorList = None
     stopping_criteria: Optional[StoppingCriteriaList] = None
+<<<<<<< HEAD
     streaming_key: str = "streaming"  #: :meta private:
     history_key: str = "history"  #: :meta private:
     prompt_key: str = "prompt"  #: :meta private:
     output_key: str = "answer_result_stream"  #: :meta private:
+=======
+    eos_token_id: Optional[int] = [2]
+
+    state: object = {'max_new_tokens': 50,
+                     'seed': 1,
+                     'temperature': 0, 'top_p': 0.1,
+                     'top_k': 40, 'typical_p': 1,
+                     'repetition_penalty': 1.2,
+                     'encoder_repetition_penalty': 1,
+                     'no_repeat_ngram_size': 0,
+                     'min_length': 0,
+                     'penalty_alpha': 0,
+                     'num_beams': 1,
+                     'length_penalty': 1,
+                     'early_stopping': False, 'add_bos_token': True, 'ban_eos_token': False,
+                     'truncation_length': 2048, 'custom_stopping_strings': '',
+                     'cpu_memory': 0, 'auto_devices': False, 'disk': False, 'cpu': False, 'bf16': False,
+                     'load_in_8bit': False, 'wbits': 'None', 'groupsize': 'None', 'model_type': 'None',
+                     'pre_layer': 0, 'gpu_memory_0': 0}
+>>>>>>> bc552302e9189af332f5ee655bd70d9a2e35b4d9
 
     def __init__(self, checkPoint: LoaderCheckPoint = None):
         super().__init__()
         self.checkPoint = checkPoint
 
     @property
+<<<<<<< HEAD
     def _chain_type(self) -> str:
         return "LLamaLLMChain"
 
@@ -68,6 +113,10 @@ class LLamaLLMChain(BaseAnswer, Chain, ABC):
         :meta private:
         """
         return [self.output_key]
+=======
+    def _llm_type(self) -> str:
+        return "LLamaLLM"
+>>>>>>> bc552302e9189af332f5ee655bd70d9a2e35b4d9
 
     @property
     def _check_point(self) -> LoaderCheckPoint:
@@ -112,6 +161,7 @@ class LLamaLLMChain(BaseAnswer, Chain, ABC):
         formatted_history += "### Human：{}\n### Assistant：".format(query)
         return formatted_history
 
+<<<<<<< HEAD
     def _call(
             self,
             inputs: Dict[str, Any],
@@ -137,6 +187,37 @@ class LLamaLLMChain(BaseAnswer, Chain, ABC):
         self.stopping_criteria.append(listenerQueue)
         # TODO 需要实现chat对话模块和注意力模型，目前_call为langchain的LLM拓展的api，默认为无提示词模式，如果需要操作注意力模型，可以参考chat_glm的实现
         soft_prompt = self.history_to_text(query=prompt, history=history)
+=======
+    def prepare_inputs_for_generation(self,
+                                      input_ids: torch.LongTensor):
+        """
+        预生成注意力掩码和 输入序列中每个位置的索引的张量
+        # TODO 没有思路
+        :return:
+        """
+
+        mask_positions = torch.zeros((1, input_ids.shape[1]), dtype=input_ids.dtype).to(self.checkPoint.model.device)
+
+        attention_mask = self.get_masks(input_ids, input_ids.device)
+
+        position_ids = self.get_position_ids(
+            input_ids,
+            device=input_ids.device,
+            mask_positions=mask_positions
+        )
+
+        return input_ids, position_ids, attention_mask
+
+    @property
+    def _history_len(self) -> int:
+        return self.history_len
+
+    def set_history_len(self, history_len: int = 10) -> None:
+        self.history_len = history_len
+
+    def _call(self, prompt: str, stop: Optional[List[str]] = None) -> str:
+        print(f"__call:{prompt}")
+>>>>>>> bc552302e9189af332f5ee655bd70d9a2e35b4d9
         if self.logits_processor is None:
             self.logits_processor = LogitsProcessorList()
         self.logits_processor.append(InvalidScoreLogitsProcessor())
@@ -155,6 +236,7 @@ class LLamaLLMChain(BaseAnswer, Chain, ABC):
             "logits_processor": self.logits_processor}
 
         #  向量转换
+<<<<<<< HEAD
         input_ids = self.encode(soft_prompt, add_bos_token=self.checkPoint.tokenizer.add_bos_token,
                                 truncation_length=self.max_new_tokens)
 
@@ -178,13 +260,46 @@ class LLamaLLMChain(BaseAnswer, Chain, ABC):
 
         else:
             output_ids = self.checkPoint.model.generate(**gen_kwargs)
+=======
+        input_ids = self.encode(prompt, add_bos_token=self.state['add_bos_token'], truncation_length=self.max_new_tokens)
+        # input_ids, position_ids, attention_mask = self.prepare_inputs_for_generation(input_ids=filler_input_ids)
+
+
+        gen_kwargs.update({'inputs': input_ids})
+        # 注意力掩码
+        # gen_kwargs.update({'attention_mask': attention_mask})
+        # gen_kwargs.update({'position_ids': position_ids})
+        if self.stopping_criteria is None:
+            self.stopping_criteria = transformers.StoppingCriteriaList()
+        # 观测输出
+        gen_kwargs.update({'stopping_criteria': self.stopping_criteria})
+
+        output_ids = self.checkPoint.model.generate(**gen_kwargs)
+>>>>>>> bc552302e9189af332f5ee655bd70d9a2e35b4d9
         new_tokens = len(output_ids[0]) - len(input_ids[0])
         reply = self.decode(output_ids[0][-new_tokens:])
         print(f"response:{reply}")
         print(f"+++++++++++++++++++++++++++++++++++")
+<<<<<<< HEAD
 
         answer_result = AnswerResult()
         history += [[prompt, reply]]
         answer_result.history = history
         answer_result.llm_output = {"answer": reply}
         generate_with_callback(answer_result)
+=======
+        return reply
+
+    def generatorAnswer(self, prompt: str,
+                         history: List[List[str]] = [],
+                         streaming: bool = False):
+
+        # TODO 需要实现chat对话模块和注意力模型，目前_call为langchain的LLM拓展的api，默认为无提示词模式，如果需要操作注意力模型，可以参考chat_glm的实现
+        softprompt = self.history_to_text(prompt,history=history)
+        response = self._call(prompt=softprompt, stop=['\n###'])
+
+        answer_result = AnswerResult()
+        answer_result.history = history + [[prompt, response]]
+        answer_result.llm_output = {"answer": response}
+        yield answer_result
+>>>>>>> bc552302e9189af332f5ee655bd70d9a2e35b4d9
