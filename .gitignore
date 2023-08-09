@@ -177,6 +177,7 @@ loader/tmp_files
 flagged/*
 
 #Local data
+data/*
 data_*/*
 chatGLM130B/*
 test.py
