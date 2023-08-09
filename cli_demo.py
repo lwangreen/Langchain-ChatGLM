@@ -30,6 +30,7 @@ def main():
         if not filepath:
             continue
         vs_path, load_files = local_doc_qa.init_knowledge_vector_store(filepath)
+        print("OUTPUT vs_path", vs_path)
         #print("OUTPUT load_files:", load_files)
 
         # 支持加载多个文件

@@ -98,7 +98,8 @@ def write_check_file(filepath, docs):
     if not os.path.exists(folder_path):
         os.makedirs(folder_path)
     fp = os.path.join(folder_path, 'load_file.txt')
-    with open(fp, 'a+', encoding='utf-8') as fout:
+    # with open(fp, 'a+', encoding='utf-8') as fout:
+    with open(fp, 'w', encoding='utf-8') as fout:
         fout.write("filepath=%s,len=%s" % (filepath, len(docs)))
         fout.write('\n')
         for i in docs:
@@ -259,10 +260,13 @@ class LocalDocQA:
             if(len(match_doc_names)>0):
                 partial_vectorstore = self.load_selected_file_knowledge(match_doc_names) #inputs=[select_vs, files, sentence_size, chatbot, vs_add, vs_add]
                 related_docs_with_score, len_context = partial_vectorstore.similarity_search_with_score(query, k=self.top_k, match_docs=match_doc_names,)
-        # if(len(match_doc_names) == 0 or len_context < self.chunk_size*self.top_k): # Cannot get sufficient information from local knowledge. # 放宽限制，移除长度限制 *self.top_k 用以扩大文档内搜索结果的适用范围。 yunze 2023-07-10
-        # if(len(match_doc_names) == 0): # Cannot get sufficient information from local knowledge. # 放宽限制，移除长度限制 *self.top_k 用以扩大文档内搜索结果的适用范围。 yunze 2023-07-10
+                print("OUTPUT len_context1:", len_context)
+                if(len_context < self.chunk_size*self.top_k): # Cannot get sufficient information from local knowledge. # 放宽限制，移除长度限制 *self.top_k 用以扩大文档内搜索结果的适用范围。 yunze 2023-07-10
+                    print("IN regenerate answer, hierarchy faiss")
+                    related_docs_with_score, len_context = partial_vectorstore.similarity_search_with_score(query, k=self.top_k, match_docs=match_doc_names)
+                    print("OUTPUT len_context2:", len_context)
             else:
-                print("IN regenerate answer, hierarchy faiss")
+                print("IN regenerate answer, hierarchy faiss, no match files")
                 related_docs_with_score, _ = vector_store.similarity_search_with_score(query, k=self.top_k, match_docs = [])
         else:
             print("IN regenerate answer")
@@ -310,7 +314,6 @@ class LocalDocQA:
             prompt = generate_prompt(related_docs_with_score, query)
         else:
             prompt = query
-        print("OUTPUT prompt:", prompt)
         # for answer_result in self.llm.generatorAnswer(prompt=prompt, history=chat_history,
                                                     #   streaming=streaming):
 

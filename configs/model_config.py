@@ -223,7 +223,8 @@ DOC_PATH= os.path.join(os.path.dirname(os.path.dirname(__file__)), "data/data_do
 # 基于上下文的prompt模版，请务必保留"{question}"和"{context}"
 PROMPT_TEMPLATE = """已知信息：
 {context} 
-根据上述已知信息，详细和专业的来回答用户的问题。如果无法从中得到答案，请说 “根据已知信息无法回答该问题” 或 “没有提供足够的相关信息”，不允许在答案中添加编造成分，答案请使用中文。 问题是：{question}"""
+根据上述已知信息，详细和专业的来回答用户的问题。如果无法从中得到答案，请说 “无法回答该问题” 或 “没有提供足够的相关信息”，不允许在答案中添加编造成分，答案请使用中文。 问题是：{question}"""
+# 根据上述已知信息，详细和专业的来回答用户的问题。如果无法从中得到答案，请说 “根据已知信息无法回答该问题” 或 “没有提供足够的相关信息”，不允许在答案中添加编造成分，答案请使用中文。 问题是：{question}"""
 #根据上述已知信息，简洁和专业的来回答用户的问题。如果无法从中得到答案，请说 “根据已知信息无法回答该问题” 或 “没有提供足够的相关信息”，不允许在答案中添加编造成分，答案请使用中文。 问题是：{question}"""
 
 #Luming added 20230712
@@ -245,7 +246,7 @@ LLM_HISTORY_LEN = 3
 VECTOR_SEARCH_TOP_K = 5
 
 # 知识检索内容相关度 Score, 数值范围约为0-1100，如果为0，则不生效，建议设置为500左右，经测试设置为小于500时，匹配结果更精准
-VECTOR_SEARCH_SCORE_THRESHOLD = 500
+VECTOR_SEARCH_SCORE_THRESHOLD = 0
 
 NLTK_DATA_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), "nltk_data")
 
@@ -287,3 +288,5 @@ USE_HIERARCHY_FAISS = True
 
 # 是否使用 QA 数据集
 USE_QA_DATA = False
+
+KNOWLEDGE_BASE_NAME = "7.huaxuegongcheng_FAISS_20230804_013815"

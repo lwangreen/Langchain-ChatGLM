@@ -110,7 +110,7 @@ class MyFAISS(FAISS, VectorStore):
 
 
     def similarity_search_with_score_by_vector(
-            self, query: str, k: int = 5, selected_headings: List[str] = [] # Added loaded_files parameter - Luming modified 20230614
+            self, query: str, k: int = 5, selected_headings: List[str] = []# Added loaded_files parameter - Luming modified 20230614
     ) -> List[Document]:
         scores, indices = self.similarity_search_by_vector(query, k)
         docs = []
@@ -162,10 +162,9 @@ class MyFAISS(FAISS, VectorStore):
                 if cur_docs_len < self.chunk_size*k:
                     id_list.append(i)
                     break_flag = False
-                    cur_index = i+1
-                    len_docstore = len(self.index_to_docstore_id) 
+                    cur_index = i+1 
                     prev_doc0 = None
-                    while cur_index < len_docstore and not break_flag:                
+                    while cur_index < store_len and not break_flag:                
                         if cur_index not in id_list:
                             _id0 = self.index_to_docstore_id[cur_index]
                             doc0 = self.docstore.search(_id0)
@@ -220,15 +219,15 @@ class MyFAISS(FAISS, VectorStore):
                 
                 up_break_flag = False
                 down_break_flag = False
-                up_index = i-1
-                down_index = i+1
+                up_index = i
+                down_index = i
                 while True:
                     if not up_break_flag:
-                        if up_index not in temp_id_list and 0 <= up_index < len(self.index_to_docstore_id):
+                        if up_index not in temp_id_list:
                             _id0 = self.index_to_docstore_id[up_index]
                             doc0 = self.docstore.search(_id0)
                             if docs_len + len(doc0.page_content) > self.chunk_size*k or '\n' in doc0.page_content or doc0.metadata["source"] != \
-                                    doc.metadata["source"]:
+                                    doc.metadata["source"] or up_index < 0:
                                 up_break_flag = True
                                 
                             elif doc0.metadata["source"] == doc.metadata["source"]:
@@ -237,14 +236,14 @@ class MyFAISS(FAISS, VectorStore):
                                 temp_id_list.append(up_index)
                                 
                     if not down_break_flag:
-                        if down_index not in temp_id_list and 0 <= down_index < len(self.index_to_docstore_id):
+                        if down_index not in temp_id_list:
                             _id0 = self.index_to_docstore_id[down_index]
                             doc0 = self.docstore.search(_id0)
                             if (USE_QA_DATA):   # QA data 只选取标题之后的第一个段落
                                 cond = ('\n' in doc0.page_content) or doc0.metadata["source"] != doc.metadata["source"]
                             else:
                                 cond = docs_len + len(doc0.page_content) > self.chunk_size*k or '\n' in doc0.page_content\
-                                   or doc0.metadata["source"] != doc.metadata["source"]
+                                   or doc0.metadata["source"] != doc.metadata["source"] or down_index >= store_len
                             if (cond):
                                 down_break_flag = True
                                
@@ -253,12 +252,16 @@ class MyFAISS(FAISS, VectorStore):
                                 cur_docs_len += docs_len
                                 temp_id_list.append(down_index)
 
-                    if not up_break_flag:
-                        up_index-=1
-                    if not down_break_flag:
-                        down_index+=1
+               
+                    up_index-=1
+                    down_index+=1
+                    if up_index<0:
+                        up_break_flag=True
+                    if down_index >= store_len:
+                        down_break_flag=True
                     if up_break_flag and down_break_flag:
                         break
+                    #print("OUTPUT temp_id_list:",temp_id_list, up_break_flag,down_break_flag, up_index, down_index)
                 temp_id_list = sorted(temp_id_list)
                 id_list += temp_id_list
             #print("OUTPUT temp docs_len", cur_docs_len)
@@ -361,7 +364,7 @@ class MyFAISS(FAISS, VectorStore):
         # print(topk_similarities)
         # return topk_similarities.indices.to('cpu').numpy(), topk_similarities.values.to('cpu').numpy()
 
-        print("OUTPUT File Similarities:", similarities)
+        #print("OUTPUT File Similarities:", similarities)
         #Find top 2 maximum results
         temp_max_similarity = -1
         for i in range(0, k):
@@ -408,7 +411,7 @@ class MyFAISS(FAISS, VectorStore):
         
     # Luming modified 20230614
     def similarity_search_with_score(
-        self, query: str, k: int = 4, match_docs: List[str]=[]
+            self, query: str, k: int = 4, match_docs: List[str]=[]
     ) -> List[Tuple[Document, float]]:
         """Return docs most similar to query.
 
