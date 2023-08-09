@@ -65,7 +65,11 @@ class MyFAISS(FAISS, VectorStore):
                 # self.index.reset()
                 self.save_local(vs_path)
                 return f"docs delete success"
+<<<<<<< HEAD
         except Exception as e: 
+=======
+        except Exception as e:
+>>>>>>> bc552302e9189af332f5ee655bd70d9a2e35b4d9
             print(e)
             return f"docs delete fail"
 
@@ -81,11 +85,20 @@ class MyFAISS(FAISS, VectorStore):
 
     def list_docs(self):
         return list(set(v.metadata["source"] for v in self.docstore._dict.values()))
+<<<<<<< HEAD
 
 
     def similarity_search_by_vector(self, query: str, k: int = 5,):
          #print("SUCCESS", loaded_files) #Luming modified 20230614
         embedding = self.embedding_function(query)
+=======
+    
+
+    def similarity_search_with_score_by_vector(
+            self, embedding: List[float], k: int = 5, selected_headings: List[str] = [] # Added loaded_files parameter - Luming modified 20230614
+    ) -> List[Document]:
+        #print("SUCCESS", loaded_files) #Luming modified 20230614
+>>>>>>> bc552302e9189af332f5ee655bd70d9a2e35b4d9
         faiss = dependable_faiss_import()
         vector = np.array([embedding], dtype=np.float32)
         #print("OUTPUT vector:", vector, np.shape(vector))
@@ -94,6 +107,7 @@ class MyFAISS(FAISS, VectorStore):
             faiss.normalize_L2(vector)
         scores, indices = self.index.search(vector, k) #FAISS OUTPUT:[[351.794   366.41095 366.41095 366.41095 366.41095]] [[4096 2986 3479 4476 4762]]
         print("FAISS OUTPUT:", scores, indices)
+<<<<<<< HEAD
         return scores, indices
 
 
@@ -113,6 +127,8 @@ class MyFAISS(FAISS, VectorStore):
             self, query: str, k: int = 5, selected_headings: List[str] = []# Added loaded_files parameter - Luming modified 20230614
     ) -> List[Document]:
         scores, indices = self.similarity_search_by_vector(query, k)
+=======
+>>>>>>> bc552302e9189af332f5ee655bd70d9a2e35b4d9
         docs = []
         #id_set = set()
         id_list = list()
@@ -156,15 +172,26 @@ class MyFAISS(FAISS, VectorStore):
             # Now can retrieve the entire block from one heading to another
             docs_len = len(doc.page_content)
             cur_docs_len += docs_len
+<<<<<<< HEAD
             page_content_in_headings = doc_page_content_in_headings(doc.page_content.replace('\n', ''), selected_headings)
             if page_content_in_headings:
+=======
+            if doc.page_content.replace('\n', '') in selected_headings:
+>>>>>>> bc552302e9189af332f5ee655bd70d9a2e35b4d9
                 print("IN if doc.page_content in selected_headings")
                 if cur_docs_len < self.chunk_size*k:
                     id_list.append(i)
                     break_flag = False
+<<<<<<< HEAD
                     cur_index = i+1 
                     prev_doc0 = None
                     while cur_index < store_len and not break_flag:                
+=======
+                    cur_index = i+1
+                    len_docstore = len(self.index_to_docstore_id) 
+                    prev_doc0 = None
+                    while cur_index < len_docstore and not break_flag:                
+>>>>>>> bc552302e9189af332f5ee655bd70d9a2e35b4d9
                         if cur_index not in id_list:
                             _id0 = self.index_to_docstore_id[cur_index]
                             doc0 = self.docstore.search(_id0)
@@ -219,6 +246,7 @@ class MyFAISS(FAISS, VectorStore):
                 
                 up_break_flag = False
                 down_break_flag = False
+<<<<<<< HEAD
                 up_index = i
                 down_index = i
                 while True:
@@ -228,6 +256,17 @@ class MyFAISS(FAISS, VectorStore):
                             doc0 = self.docstore.search(_id0)
                             if docs_len + len(doc0.page_content) > self.chunk_size*k or '\n' in doc0.page_content or doc0.metadata["source"] != \
                                     doc.metadata["source"] or up_index < 0:
+=======
+                up_index = i-1
+                down_index = i+1
+                while True:
+                    if not up_break_flag:
+                        if up_index not in temp_id_list and 0 <= up_index < len(self.index_to_docstore_id):
+                            _id0 = self.index_to_docstore_id[up_index]
+                            doc0 = self.docstore.search(_id0)
+                            if '\n' in doc0.page_content or doc0.metadata["source"] != \
+                                    doc.metadata["source"]:
+>>>>>>> bc552302e9189af332f5ee655bd70d9a2e35b4d9
                                 up_break_flag = True
                                 
                             elif doc0.metadata["source"] == doc.metadata["source"]:
@@ -236,14 +275,23 @@ class MyFAISS(FAISS, VectorStore):
                                 temp_id_list.append(up_index)
                                 
                     if not down_break_flag:
+<<<<<<< HEAD
                         if down_index not in temp_id_list:
+=======
+                        if down_index not in temp_id_list and 0 <= down_index < len(self.index_to_docstore_id):
+>>>>>>> bc552302e9189af332f5ee655bd70d9a2e35b4d9
                             _id0 = self.index_to_docstore_id[down_index]
                             doc0 = self.docstore.search(_id0)
                             if (USE_QA_DATA):   # QA data 只选取标题之后的第一个段落
                                 cond = ('\n' in doc0.page_content) or doc0.metadata["source"] != doc.metadata["source"]
                             else:
+<<<<<<< HEAD
                                 cond = docs_len + len(doc0.page_content) > self.chunk_size*k or '\n' in doc0.page_content\
                                    or doc0.metadata["source"] != doc.metadata["source"] or down_index >= store_len
+=======
+                                cond = (docs_len + len(doc0.page_content) > self.chunk_size and '\n' in doc0.page_content)\
+                                   or doc0.metadata["source"] != doc.metadata["source"]
+>>>>>>> bc552302e9189af332f5ee655bd70d9a2e35b4d9
                             if (cond):
                                 down_break_flag = True
                                
@@ -251,6 +299,7 @@ class MyFAISS(FAISS, VectorStore):
                                 docs_len += len(doc0.page_content)
                                 cur_docs_len += docs_len
                                 temp_id_list.append(down_index)
+<<<<<<< HEAD
 
                
                     up_index-=1
@@ -262,6 +311,14 @@ class MyFAISS(FAISS, VectorStore):
                     if up_break_flag and down_break_flag:
                         break
                     #print("OUTPUT temp_id_list:",temp_id_list, up_break_flag,down_break_flag, up_index, down_index)
+=======
+                    if not up_break_flag:
+                        up_index-=1
+                    if not down_break_flag:
+                        down_index+=1
+                    if up_break_flag and down_break_flag:
+                        break
+>>>>>>> bc552302e9189af332f5ee655bd70d9a2e35b4d9
                 temp_id_list = sorted(temp_id_list)
                 id_list += temp_id_list
             #print("OUTPUT temp docs_len", cur_docs_len)
@@ -357,6 +414,7 @@ class MyFAISS(FAISS, VectorStore):
 
         # Calculate cosine similarity
         similarities = calculate_similarity(new_vector, embeddings)
+<<<<<<< HEAD
         similarities = similarities.tolist()
 
         # 使用 similarity 的 topk。Yunze. 2023-07-14
@@ -386,6 +444,37 @@ class MyFAISS(FAISS, VectorStore):
                 break
         
         return max_indexes, max_similarities #max_index.to('cpu').numpy(), max_similarity
+=======
+        # similarities = similarities.tolist()
+
+        # 使用 similarity 的 topk。Yunze. 2023-07-14
+        topk_similarities = similarities.topk(k)
+        print(topk_similarities)
+        return topk_similarities.indices.to('cpu').numpy(), topk_similarities.values.to('cpu').numpy()
+
+        # print("OUTPUT File Similarities:", similarities)
+        # Find top 2 maximum results
+        # temp_max_similarity = -1
+        # for i in range(0, k):
+        #     if (similarities):   # 确保 similarities 长度不小于1
+        #         max_similarity = max(similarities)
+        #         if(max_similarity > temp_max_similarity):
+        #             temp_max_similarity = max_similarity
+        #         if max_similarity > 0:        # init: 0.5
+        #             if(temp_max_similarity - max_similarity > 0.15):
+        #                 break
+        #             max_similarities.append(max_similarity)
+        #             max_index = similarities.index(max_similarity)
+        #             max_indexes.append(max_index)
+        #             del similarities[max_index]
+
+        #         else:
+        #             continue
+        #     else:
+        #         break
+        
+        # return max_indexes, max_similarities #max_index.to('cpu').numpy(), max_similarity
+>>>>>>> bc552302e9189af332f5ee655bd70d9a2e35b4d9
 
     def read_docx_headings(self, f):
         from docx import Document
@@ -402,6 +491,7 @@ class MyFAISS(FAISS, VectorStore):
                 headings.append(p.text)
         return headings
     
+<<<<<<< HEAD
     def similarity_search_in_doc_for_autoprompt(self, query: str, k: int=5):
         _, indices = self.similarity_search_by_vector(query, k)
         doc_page_content = self.get_doc_page_content(indices)
@@ -412,6 +502,11 @@ class MyFAISS(FAISS, VectorStore):
     # Luming modified 20230614
     def similarity_search_with_score(
             self, query: str, k: int = 4, match_docs: List[str]=[]
+=======
+    # Luming modified 20230614
+    def similarity_search_with_score(
+        self, query: str, k: int = 4, match_docs: List[str]=[]
+>>>>>>> bc552302e9189af332f5ee655bd70d9a2e35b4d9
     ) -> List[Tuple[Document, float]]:
         """Return docs most similar to query.
 
@@ -422,6 +517,7 @@ class MyFAISS(FAISS, VectorStore):
         Returns:
             List of Documents most similar to the query and score for each
         """ 
+<<<<<<< HEAD
         if(match_docs): #and match_docs[0].endswith('docx')):
             headings_from_selected_docs = []
             for f in match_docs:
@@ -431,6 +527,18 @@ class MyFAISS(FAISS, VectorStore):
         else:
             print("OUTPUT Default generate answer")
             docs, len_context = self.similarity_search_with_score_by_vector(query, k)
+=======
+        embedding = self.embedding_function(query)
+        if(match_docs):
+            selected_headings = []
+            for f in match_docs:
+                selected_headings = self.read_docx_headings(f)
+            print("OUTPUT headings (top 5):", selected_headings[0:5])
+            docs, len_context = self.similarity_search_with_score_by_vector(embedding, k, selected_headings=selected_headings)
+        else:
+            print("OUTPUT Default generate answer")
+            docs, len_context = self.similarity_search_with_score_by_vector(embedding, k)
+>>>>>>> bc552302e9189af332f5ee655bd70d9a2e35b4d9
         return docs, len_context
     
 # Mean Pooling - Take attention mask into account for correct averaging
@@ -453,8 +561,11 @@ def clean_loaded_filenames(loaded_files):
         clean_loaded_files.append(filename.split("/")[-1].split(".")[-2])
     return clean_loaded_files
 
+<<<<<<< HEAD
 def doc_page_content_in_headings(page_content, headings):
     for h in headings:
         if page_content in h:
             return True
     return False
+=======
+>>>>>>> bc552302e9189af332f5ee655bd70d9a2e35b4d9

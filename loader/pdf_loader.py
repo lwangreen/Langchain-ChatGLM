@@ -22,10 +22,12 @@ class UnstructuredPaddlePDFLoader(UnstructuredFileLoader):
             doc = fitz.open(filepath)
             txt_file_path = os.path.join(full_dir_path, f"{os.path.split(filepath)[-1]}.txt")
             img_name = os.path.join(full_dir_path, 'tmp.png')
+            print("OUTPUT txt_file_path,", txt_file_path)
             with open(txt_file_path, 'w', encoding='utf-8') as fout:
                 for i in range(doc.page_count):
                     page = doc[i]
                     text = page.get_text("")
+                    print("OUTPUT text:", text)
                     fout.write(text)
                     fout.write("\n")
 

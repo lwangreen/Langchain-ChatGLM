@@ -18,7 +18,10 @@ from agent import bing_search
 from langchain.docstore.document import Document
 from functools import lru_cache
 from textsplitter.zh_title_enhance import zh_title_enhance
+<<<<<<< HEAD
 from langchain.chains.base import Chain
+=======
+>>>>>>> bc552302e9189af332f5ee655bd70d9a2e35b4d9
 
 
 # patch HuggingFaceEmbeddings to make it hashable
@@ -98,8 +101,12 @@ def write_check_file(filepath, docs):
     if not os.path.exists(folder_path):
         os.makedirs(folder_path)
     fp = os.path.join(folder_path, 'load_file.txt')
+<<<<<<< HEAD
     # with open(fp, 'a+', encoding='utf-8') as fout:
     with open(fp, 'w', encoding='utf-8') as fout:
+=======
+    with open(fp, 'a+', encoding='utf-8') as fout:
+>>>>>>> bc552302e9189af332f5ee655bd70d9a2e35b4d9
         fout.write("filepath=%s,len=%s" % (filepath, len(docs)))
         fout.write('\n')
         for i in docs:
@@ -116,12 +123,15 @@ def generate_prompt(related_docs: List[str],
     return prompt
 
 
+<<<<<<< HEAD
 def generate_autoprompt(doc_page_content: str,
                     prompt_template: str = AUTOPROMPT_TEMPLATE, ) -> str:
     prompt = prompt_template.replace("{context}", doc_page_content.replace('\n',''))
     return prompt
 
 
+=======
+>>>>>>> bc552302e9189af332f5ee655bd70d9a2e35b4d9
 def search_result2docs(search_results):
     docs = []
     for result in search_results:
@@ -133,7 +143,11 @@ def search_result2docs(search_results):
 
 
 class LocalDocQA:
+<<<<<<< HEAD
     llm_model_chain: Chain = None
+=======
+    llm: BaseAnswer = None
+>>>>>>> bc552302e9189af332f5ee655bd70d9a2e35b4d9
     embeddings: object = None
     top_k: int = VECTOR_SEARCH_TOP_K
     chunk_size: int = CHUNK_SIZE
@@ -143,10 +157,17 @@ class LocalDocQA:
     def init_cfg(self,
                  embedding_model: str = EMBEDDING_MODEL,
                  embedding_device=EMBEDDING_DEVICE,
+<<<<<<< HEAD
                  llm_model: Chain = None,
                  top_k=VECTOR_SEARCH_TOP_K,
                  ):
         self.llm_model_chain = llm_model
+=======
+                 llm_model: BaseAnswer = None,
+                 top_k=VECTOR_SEARCH_TOP_K,
+                 ):
+        self.llm = llm_model
+>>>>>>> bc552302e9189af332f5ee655bd70d9a2e35b4d9
         self.embeddings = HuggingFaceEmbeddings(model_name=embedding_model_dict[embedding_model],
                                                 model_kwargs={'device': embedding_device})
         self.top_k = top_k
@@ -214,7 +235,10 @@ class LocalDocQA:
             return vs_path, loaded_files
         else:
             logger.info("文件均未成功加载，请检查依赖包或替换为其他文件再次上传。")
+<<<<<<< HEAD
 
+=======
+>>>>>>> bc552302e9189af332f5ee655bd70d9a2e35b4d9
             return None, loaded_files
 
     def one_knowledge_add(self, vs_path, one_title, one_conent, one_content_segmentation, sentence_size):
@@ -246,6 +270,7 @@ class LocalDocQA:
         partial_vector = MyFAISS.from_documents(docs, self.embeddings)  ##docs 为Document列表
         return partial_vector
     
+<<<<<<< HEAD
     #Luming added 20230712
     def get_keywords_from_autoprompt():
         keywords = []
@@ -268,11 +293,23 @@ class LocalDocQA:
             else:
                 print("IN regenerate answer, hierarchy faiss, no match files")
                 related_docs_with_score, _ = vector_store.similarity_search_with_score(query, k=self.top_k, match_docs = [])
+=======
+    # 在指定文档中搜索
+    def similarity_search_within_docx_files(self, vector_store, query, loaded_files):
+        match_doc_names = vector_store.compare_similarity_query_doc(query, loaded_files, doc_name_mode=True)
+        #print("OUTPUT match_doc_name: ", match_doc_names)
+        if(len(match_doc_names)>0 and USE_HIERARCHY_FAISS):
+            partial_vectorstore = self.load_selected_file_knowledge(match_doc_names) #inputs=[select_vs, files, sentence_size, chatbot, vs_add, vs_add]
+            related_docs_with_score, len_context = partial_vectorstore.similarity_search_with_score(query, k=self.top_k, match_docs=match_doc_names,)
+        # if(len(match_doc_names) == 0 or len_context < self.chunk_size*self.top_k): # Cannot get sufficient information from local knowledge. # 放宽限制，移除长度限制 *self.top_k 用以扩大文档内搜索结果的适用范围。 yunze 2023-07-10
+        # if(len(match_doc_names) == 0): # Cannot get sufficient information from local knowledge. # 放宽限制，移除长度限制 *self.top_k 用以扩大文档内搜索结果的适用范围。 yunze 2023-07-10
+>>>>>>> bc552302e9189af332f5ee655bd70d9a2e35b4d9
         else:
             print("IN regenerate answer")
             related_docs_with_score, _ = vector_store.similarity_search_with_score(query, k=self.top_k, match_docs = [])
         return related_docs_with_score
     
+<<<<<<< HEAD
     def generate_intent_keywords(self, query_autoprompt):
         answer_result = self.llm.generatorAnswer(prompt=query_autoprompt, streaming=False)
         resp = next(answer_result).llm_output["answer"]
@@ -280,6 +317,8 @@ class LocalDocQA:
         print("OUTPUT intent keywords:", resp)
         return resp
 
+=======
+>>>>>>> bc552302e9189af332f5ee655bd70d9a2e35b4d9
 
     def get_knowledge_based_answer(self, query, vs_path, loaded_files=[], chat_history=[], streaming: bool = STREAMING):
         vector_store = load_vector_store(vs_path, self.embeddings)
@@ -288,6 +327,7 @@ class LocalDocQA:
         vector_store.score_threshold = self.score_threshold
         #Luming modified 20230630
         #print("DEBUG, ", query, loaded_files)
+<<<<<<< HEAD
         if not len(loaded_files):
             for d in os.listdir(DOC_PATH):
               if os.path.isfile(DOC_PATH+'/'+d):
@@ -308,12 +348,25 @@ class LocalDocQA:
         else:
             related_docs_with_score, _ = vector_store.similarity_search_with_score(query, k=self.top_k, match_docs = [])
         
+=======
+        #if not len(loaded_files):
+        #   for d in os.listdir(DOC_PATH):
+        #       if os.path.isfile(DOC_PATH+'/'+d):
+        #            loaded_files.append("data/data_docx/"+d)
+        #   print("DEBUG, ", loaded_files)
+            
+        if loaded_files[0].endswith(".docx"):
+            related_docs_with_score = self.similarity_search_within_docx_files(vector_store, query, loaded_files)
+        else:
+            related_docs_with_score, _ = vector_store.similarity_search_with_score(query, k=self.top_k, match_docs = [])
+>>>>>>> bc552302e9189af332f5ee655bd70d9a2e35b4d9
         #print("OUTPUT related_docs_with_score:", related_docs_with_score, len_context)
         torch_gc()
         if len(related_docs_with_score) > 0:
             prompt = generate_prompt(related_docs_with_score, query)
         else:
             prompt = query
+<<<<<<< HEAD
         # for answer_result in self.llm.generatorAnswer(prompt=prompt, history=chat_history,
                                                     #   streaming=streaming):
 
@@ -321,6 +374,11 @@ class LocalDocQA:
             {"prompt": prompt, "history": chat_history, "streaming": streaming})
 
         for answer_result in answer_result_stream_result['answer_result_stream']:
+=======
+        print("OUTPUT prompt:", prompt)
+        for answer_result in self.llm.generatorAnswer(prompt=prompt, history=chat_history,
+                                                      streaming=streaming):
+>>>>>>> bc552302e9189af332f5ee655bd70d9a2e35b4d9
             resp = answer_result.llm_output["answer"]
             history = answer_result.history
             history[-1][0] = query
@@ -362,10 +420,15 @@ class LocalDocQA:
         result_docs = search_result2docs(results)
         prompt = generate_prompt(result_docs, query)
 
+<<<<<<< HEAD
         answer_result_stream_result = self.llm_model_chain(
             {"prompt": prompt, "history": chat_history, "streaming": streaming})
 
         for answer_result in answer_result_stream_result['answer_result_stream']:
+=======
+        for answer_result in self.llm.generatorAnswer(prompt=prompt, history=chat_history,
+                                                      streaming=streaming):
+>>>>>>> bc552302e9189af332f5ee655bd70d9a2e35b4d9
             resp = answer_result.llm_output["answer"]
             history = answer_result.history
             history[-1][0] = query
@@ -384,7 +447,11 @@ class LocalDocQA:
     def update_file_from_vector_store(self,
                                       filepath: str or List[str],
                                       vs_path,
+<<<<<<< HEAD
                                       docs: List[Document], ):
+=======
+                                      docs: List[Document],):
+>>>>>>> bc552302e9189af332f5ee655bd70d9a2e35b4d9
         vector_store = load_vector_store(vs_path, self.embeddings)
         status = vector_store.update_doc(filepath, docs)
         return status
@@ -408,6 +475,10 @@ if __name__ == "__main__":
     args_dict = vars(args)
     shared.loaderCheckPoint = LoaderCheckPoint(args_dict)
     llm_model_ins = shared.loaderLLM()
+<<<<<<< HEAD
+=======
+    llm_model_ins.set_history_len(LLM_HISTORY_LEN)
+>>>>>>> bc552302e9189af332f5ee655bd70d9a2e35b4d9
 
     local_doc_qa = LocalDocQA()
     local_doc_qa.init_cfg(llm_model=llm_model_ins)

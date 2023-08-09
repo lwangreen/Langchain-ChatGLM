@@ -23,13 +23,18 @@ def main():
                           top_k=VECTOR_SEARCH_TOP_K)
     vs_path = None
     while not vs_path:
+<<<<<<< HEAD
         print("注意输入的路径是完整的文件路径，例如knowledge_base/`knowledge_base_id`/content/file.md，多个路径用英文逗号分割")
         filepath = input("Input your local knowledge file path 请输入本地知识文件路径：")
         
+=======
+        filepath = input("Input your local knowledge file path 请输入本地知识文件路径：")
+>>>>>>> bc552302e9189af332f5ee655bd70d9a2e35b4d9
         # 判断 filepath 是否为空，如果为空的话，重新让用户输入,防止用户误触回车
         if not filepath:
             continue
         vs_path, load_files = local_doc_qa.init_knowledge_vector_store(filepath)
+<<<<<<< HEAD
         print("OUTPUT vs_path", vs_path)
         #print("OUTPUT load_files:", load_files)
 
@@ -53,6 +58,9 @@ def main():
         # else:
         #     print("load file failed, re-input your local knowledge file path 请重新输入本地知识文件路径")
         
+=======
+    #print("OUTPUT load_files:", load_files)
+>>>>>>> bc552302e9189af332f5ee655bd70d9a2e35b4d9
     history = []
     while True:
         query = input("Input your question 请输入问题：")
