@@ -4,20 +4,14 @@ import os
 import shutil
 from typing import List, Optional
 import urllib
-<<<<<<< HEAD
 
 import websockets
-=======
->>>>>>> bc552302e9189af332f5ee655bd70d9a2e35b4d9
 import asyncio
 import nltk
 import pydantic
 import uvicorn
 from fastapi import Body, FastAPI, File, Form, Query, UploadFile, WebSocket
-<<<<<<< HEAD
 from fastapi.responses import StreamingResponse
-=======
->>>>>>> bc552302e9189af332f5ee655bd70d9a2e35b4d9
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing_extensions import Annotated
@@ -26,11 +20,7 @@ from starlette.responses import RedirectResponse
 from chains.local_doc_qa import LocalDocQA
 from configs.model_config import (KB_ROOT_PATH, EMBEDDING_DEVICE,
                                   EMBEDDING_MODEL, NLTK_DATA_PATH,
-<<<<<<< HEAD
                                   VECTOR_SEARCH_TOP_K, LLM_HISTORY_LEN, OPEN_CROSS_DOMAIN, KNOWLEDGE_BASE_NAME)
-=======
-                                  VECTOR_SEARCH_TOP_K, LLM_HISTORY_LEN, OPEN_CROSS_DOMAIN)
->>>>>>> bc552302e9189af332f5ee655bd70d9a2e35b4d9
 import models.shared as shared
 from models.loader.args import parser
 from models.loader import LoaderCheckPoint
@@ -277,11 +267,7 @@ async def update_doc(
 
 
 async def local_doc_chat(
-<<<<<<< HEAD
         # knowledge_base_id: str = Body(..., description="Knowledge Base Name", example="kb1"),
-=======
-        knowledge_base_id: str = Body(..., description="Knowledge Base Name", example="kb1"),
->>>>>>> bc552302e9189af332f5ee655bd70d9a2e35b4d9
         question: str = Body(..., description="Question", example="工伤保险是什么？"),
         history: List[List[str]] = Body(
             [],
@@ -294,12 +280,8 @@ async def local_doc_chat(
             ],
         ),
 ):
-<<<<<<< HEAD
     # vs_path = get_vs_path(knowledge_base_id)
     vs_path = "/root/wlm/BERT_GK_Project/langchain-ChatGLM/knowledge_base/"+KNOWLEDGE_BASE_NAME+"/vector_store/"
-=======
-    vs_path = get_vs_path(knowledge_base_id)
->>>>>>> bc552302e9189af332f5ee655bd70d9a2e35b4d9
     if not os.path.exists(vs_path):
         # return BaseResponse(code=1, msg=f"Knowledge base {knowledge_base_id} not found")
         return ChatMessage(
@@ -533,7 +515,6 @@ def api_start(host, port):
 
     llm_model_ins = shared.loaderLLM()
     llm_model_ins.history_len = LLM_HISTORY_LEN
-
     app = FastAPI()
     # Add CORS middleware to allow all origins
     # 在config.py中设置OPEN_DOMAIN=True，允许跨域

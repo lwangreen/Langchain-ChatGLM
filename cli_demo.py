@@ -30,6 +30,7 @@ def main():
         if not filepath:
             continue
         vs_path, load_files = local_doc_qa.init_knowledge_vector_store(filepath)
+
         print("OUTPUT vs_path", vs_path)
         #print("OUTPUT load_files:", load_files)
 
@@ -53,6 +54,8 @@ def main():
         # else:
         #     print("load file failed, re-input your local knowledge file path 请重新输入本地知识文件路径")
         
+    #print("OUTPUT load_files:", load_files)
+
     history = []
     while True:
         query = input("Input your question 请输入问题：")
