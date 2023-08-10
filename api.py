@@ -431,7 +431,6 @@ async def stream_chat(websocket: WebSocket, knowledge_base_id: str):
 async def document():
     return RedirectResponse(url="/docs")
 
-<<<<<<< HEAD
 async def hello():
     async with websockets.connect("ws://localhost:7861") as websocket:
         recv_text = await websocket.send_json()
@@ -527,19 +526,13 @@ async def hack(
 ):
     # print(history)
     return StreamingResponse(hack_streamer(question, history, type))
-=======
->>>>>>> bc552302e9189af332f5ee655bd70d9a2e35b4d9
 
 def api_start(host, port):
     global app
     global local_doc_qa
 
     llm_model_ins = shared.loaderLLM()
-<<<<<<< HEAD
     llm_model_ins.history_len = LLM_HISTORY_LEN
-=======
-    llm_model_ins.set_history_len(LLM_HISTORY_LEN)
->>>>>>> bc552302e9189af332f5ee655bd70d9a2e35b4d9
 
     app = FastAPI()
     # Add CORS middleware to allow all origins
@@ -558,12 +551,9 @@ def api_start(host, port):
     app.get("/", response_model=BaseResponse)(document)
 
     app.post("/chat", response_model=ChatMessage)(chat)
-<<<<<<< HEAD
     
     app.post("/test")(test)
     #app.post("/hack")(hack)
-=======
->>>>>>> bc552302e9189af332f5ee655bd70d9a2e35b4d9
 
     app.post("/local_doc_qa/upload_file", response_model=BaseResponse)(upload_file)
     app.post("/local_doc_qa/upload_files", response_model=BaseResponse)(upload_files)
