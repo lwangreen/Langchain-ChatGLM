@@ -5,12 +5,9 @@ from langchain.document_loaders.unstructured import UnstructuredFileLoader
 from paddleocr import PaddleOCR
 import os
 import nltk
-<<<<<<< HEAD
-=======
 from configs.model_config import NLTK_DATA_PATH
 
 nltk.data.path = [NLTK_DATA_PATH] + nltk.data.path
->>>>>>> bc552302e9189af332f5ee655bd70d9a2e35b4d9
 
 class UnstructuredPaddleImageLoader(UnstructuredFileLoader):
     """Loader that uses unstructured to load image files, such as PNGs and JPGs."""
@@ -38,13 +35,6 @@ class UnstructuredPaddleImageLoader(UnstructuredFileLoader):
 if __name__ == "__main__":
     import sys
     sys.path.append(os.path.dirname(os.path.dirname(__file__)))
-<<<<<<< HEAD
-    
-    from configs.model_config import NLTK_DATA_PATH
-    nltk.data.path = [NLTK_DATA_PATH] + nltk.data.path
-    
-=======
->>>>>>> bc552302e9189af332f5ee655bd70d9a2e35b4d9
     filepath = os.path.join(os.path.dirname(os.path.dirname(__file__)), "knowledge_base", "samples", "content", "test.jpg")
     loader = UnstructuredPaddleImageLoader(filepath, mode="elements")
     docs = loader.load()

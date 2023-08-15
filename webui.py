@@ -1,12 +1,13 @@
-import gradio as gr
-import shutil
+# 运行方式：
+# 1. 安装必要的包：pip install streamlit-option-menu streamlit-chatbox>=1.1.6
+# 2. 运行本机fastchat服务：python server\llm_api.py 或者 运行对应的sh文件
+# 3. 运行API服务器：python server/api.py。如果使用api = ApiRequest(no_remote_api=True)，该步可以跳过。
+# 4. 运行WEB UI：streamlit run webui.py --server.port 7860
 
-from chains.local_doc_qa import LocalDocQA
-from configs.model_config import *
-import nltk
-import models.shared as shared
-from models.loader.args import parser
-from models.loader import LoaderCheckPoint
+import streamlit as st
+from webui_pages.utils import *
+from streamlit_option_menu import option_menu
+from webui_pages import *
 import os
 
 nltk.data.path = [NLTK_DATA_PATH] + nltk.data.path
@@ -85,16 +86,8 @@ def get_answer(query, vs_path, history, mode, score_threshold=VECTOR_SEARCH_SCOR
             yield history + [[query,
                               "请选择知识库后进行测试，当前未选择知识库。"]], ""
     else:
-<<<<<<< HEAD
-
-        answer_result_stream_result = local_doc_qa.llm_model_chain(
-            {"prompt": query, "history": history, "streaming": streaming})
-
-        for answer_result in answer_result_stream_result['answer_result_stream']:
-=======
         for answer_result in local_doc_qa.llm.generatorAnswer(prompt=query, history=history,
                                                               streaming=streaming):
->>>>>>> bc552302e9189af332f5ee655bd70d9a2e35b4d9
             resp = answer_result.llm_output["answer"]
             history = answer_result.history
             history[-1][-1] = resp
@@ -109,20 +102,11 @@ def init_model():
     args_dict = vars(args)
     shared.loaderCheckPoint = LoaderCheckPoint(args_dict)
     llm_model_ins = shared.loaderLLM()
-<<<<<<< HEAD
-    try:
-        local_doc_qa.init_cfg(llm_model=llm_model_ins)
-        answer_result_stream_result = local_doc_qa.llm_model_chain(
-            {"prompt": "你好", "history": [], "streaming": False})
-
-        for answer_result in answer_result_stream_result['answer_result_stream']:
-=======
     llm_model_ins.set_history_len(LLM_HISTORY_LEN)
     try:
         local_doc_qa.init_cfg(llm_model=llm_model_ins)
         generator = local_doc_qa.llm.generatorAnswer("你好")
         for answer_result in generator:
->>>>>>> bc552302e9189af332f5ee655bd70d9a2e35b4d9
             print(answer_result.llm_output)
         reply = """模型已成功加载，可以开始对话，或从右侧选择模式后开始对话"""
         logger.info(reply)
@@ -158,11 +142,7 @@ def reinit_model(llm_model, embedding_model, llm_history_len, no_remote_model, u
 def get_vector_store(vs_id, files, sentence_size, history, one_conent, one_content_segmentation):
     vs_path = os.path.join(KB_ROOT_PATH, vs_id, "vector_store")
     filelist = []
-<<<<<<< HEAD
-    if local_doc_qa.llm_model_chain and local_doc_qa.embeddings:
-=======
     if local_doc_qa.llm and local_doc_qa.embeddings:
->>>>>>> bc552302e9189af332f5ee655bd70d9a2e35b4d9
         if isinstance(files, list):
             for file in files:
                 filename = os.path.split(file.name)[-1]
@@ -186,13 +166,8 @@ def get_vector_store(vs_id, files, sentence_size, history, one_conent, one_conte
 
 def change_vs_name_input(vs_id, history):
     if vs_id == "新建知识库":
-<<<<<<< HEAD
-        return gr.update(visible=True), gr.update(visible=True), gr.update(visible=False), None, history, \
-               gr.update(choices=[]), gr.update(visible=False)
-=======
         return gr.update(visible=True), gr.update(visible=True), gr.update(visible=False), None, history,\
                 gr.update(choices=[]), gr.update(visible=False)
->>>>>>> bc552302e9189af332f5ee655bd70d9a2e35b4d9
     else:
         vs_path = os.path.join(KB_ROOT_PATH, vs_id, "vector_store")
         if "index.faiss" in os.listdir(vs_path):
@@ -244,16 +219,7 @@ def change_chunk_conent(mode, label_conent, history):
 
 
 def add_vs_name(vs_name, chatbot):
-<<<<<<< HEAD
-    if vs_name is None or vs_name.strip() == "":
-        vs_status = "知识库名称不能为空，请重新填写知识库名称"
-        chatbot = chatbot + [[None, vs_status]]
-        return gr.update(visible=True), gr.update(visible=True), gr.update(visible=True), gr.update(
-            visible=False), chatbot, gr.update(visible=False)
-    elif vs_name in get_vs_list():
-=======
     if vs_name in get_vs_list():
->>>>>>> bc552302e9189af332f5ee655bd70d9a2e35b4d9
         vs_status = "与已有知识库名称冲突，请重新选择其他名称后提交"
         chatbot = chatbot + [[None, vs_status]]
         return gr.update(visible=True), gr.update(visible=True), gr.update(visible=True), gr.update(
@@ -292,10 +258,6 @@ def reinit_vector_store(vs_id, history):
 def refresh_vs_list():
     return gr.update(choices=get_vs_list()), gr.update(choices=get_vs_list())
 
-<<<<<<< HEAD
-
-=======
->>>>>>> bc552302e9189af332f5ee655bd70d9a2e35b4d9
 def delete_file(vs_id, files_to_delete, chatbot):
     vs_path = os.path.join(KB_ROOT_PATH, vs_id, "vector_store")
     content_path = os.path.join(KB_ROOT_PATH, vs_id, "content")
@@ -309,19 +271,11 @@ def delete_file(vs_id, files_to_delete, chatbot):
     rested_files = local_doc_qa.list_file_from_vector_store(vs_path)
     if "fail" in status:
         vs_status = "文件删除失败。"
-<<<<<<< HEAD
-    elif len(rested_files) > 0:
-        vs_status = "文件删除成功。"
-    else:
-        vs_status = f"文件删除成功，知识库{vs_id}中无已上传文件，请先上传文件后，再开始提问。"
-    logger.info(",".join(files_to_delete) + vs_status)
-=======
     elif len(rested_files)>0:
         vs_status = "文件删除成功。"
     else:
         vs_status = f"文件删除成功，知识库{vs_id}中无已上传文件，请先上传文件后，再开始提问。"
     logger.info(",".join(files_to_delete)+vs_status)
->>>>>>> bc552302e9189af332f5ee655bd70d9a2e35b4d9
     chatbot = chatbot + [[None, vs_status]]
     return gr.update(choices=local_doc_qa.list_file_from_vector_store(vs_path), value=[]), chatbot
 
@@ -332,12 +286,7 @@ def delete_vs(vs_id, chatbot):
         status = f"成功删除知识库{vs_id}"
         logger.info(status)
         chatbot = chatbot + [[None, status]]
-<<<<<<< HEAD
-        return gr.update(choices=get_vs_list(), value=get_vs_list()[0]), gr.update(visible=True), gr.update(
-            visible=True), \
-=======
         return gr.update(choices=get_vs_list(), value=get_vs_list()[0]), gr.update(visible=True), gr.update(visible=True), \
->>>>>>> bc552302e9189af332f5ee655bd70d9a2e35b4d9
                gr.update(visible=False), chatbot, gr.update(visible=False)
     except Exception as e:
         logger.error(e)
@@ -380,12 +329,7 @@ default_theme_args = dict(
 
 with gr.Blocks(css=block_css, theme=gr.themes.Default(**default_theme_args)) as demo:
     vs_path, file_status, model_status = gr.State(
-<<<<<<< HEAD
-        os.path.join(KB_ROOT_PATH, get_vs_list()[0], "vector_store") if len(get_vs_list()) > 1 else ""), gr.State(
-        ""), gr.State(
-=======
         os.path.join(KB_ROOT_PATH, get_vs_list()[0], "vector_store") if len(get_vs_list()) > 1 else ""), gr.State(""), gr.State(
->>>>>>> bc552302e9189af332f5ee655bd70d9a2e35b4d9
         model_status)
     gr.Markdown(webui_title)
     with gr.Tab("对话"):
@@ -438,13 +382,8 @@ with gr.Blocks(css=block_css, theme=gr.themes.Default(**default_theme_args)) as 
                             load_folder_button = gr.Button("上传文件夹并加载知识库")
                         with gr.Tab("删除文件"):
                             files_to_delete = gr.CheckboxGroup(choices=[],
-<<<<<<< HEAD
-                                                               label="请从知识库已有文件中选择要删除的文件",
-                                                               interactive=True)
-=======
                                                              label="请从知识库已有文件中选择要删除的文件",
                                                              interactive=True)
->>>>>>> bc552302e9189af332f5ee655bd70d9a2e35b4d9
                             delete_file_button = gr.Button("从知识库中删除选中文件")
                     vs_refresh.click(fn=refresh_vs_list,
                                      inputs=[],
@@ -512,15 +451,9 @@ with gr.Blocks(css=block_css, theme=gr.themes.Default(**default_theme_args)) as 
                 with vs_setting:
                     vs_refresh = gr.Button("更新已有知识库选项")
                     select_vs_test = gr.Dropdown(get_vs_list(),
-<<<<<<< HEAD
-                                                 label="请选择要加载的知识库",
-                                                 interactive=True,
-                                                 value=get_vs_list()[0] if len(get_vs_list()) > 0 else None)
-=======
                                             label="请选择要加载的知识库",
                                             interactive=True,
                                             value=get_vs_list()[0] if len(get_vs_list()) > 0 else None)
->>>>>>> bc552302e9189af332f5ee655bd70d9a2e35b4d9
                     vs_name = gr.Textbox(label="请输入新建知识库名称，当前知识库命名暂不支持中文",
                                          lines=1,
                                          interactive=True,
@@ -560,13 +493,8 @@ with gr.Blocks(css=block_css, theme=gr.themes.Default(**default_theme_args)) as 
                                  inputs=[vs_name, chatbot],
                                  outputs=[select_vs_test, vs_name, vs_add, file2vs, chatbot])
                     select_vs_test.change(fn=change_vs_name_input,
-<<<<<<< HEAD
-                                          inputs=[select_vs_test, chatbot],
-                                          outputs=[vs_name, vs_add, file2vs, vs_path, chatbot])
-=======
                                      inputs=[select_vs_test, chatbot],
                                      outputs=[vs_name, vs_add, file2vs, vs_path, chatbot])
->>>>>>> bc552302e9189af332f5ee655bd70d9a2e35b4d9
                     load_file_button.click(get_vector_store,
                                            show_progress=True,
                                            inputs=[select_vs_test, files, sentence_size, chatbot, vs_add, vs_add],
@@ -632,9 +560,50 @@ with gr.Blocks(css=block_css, theme=gr.themes.Default(**default_theme_args)) as 
  .launch(server_name='0.0.0.0',
          server_port=7860,
          show_api=False,
-<<<<<<< HEAD
-         share=True,
-=======
          share=False,
->>>>>>> bc552302e9189af332f5ee655bd70d9a2e35b4d9
          inbrowser=False))
+api = ApiRequest(base_url="http://127.0.0.1:7861", no_remote_api=False)
+
+if __name__ == "__main__":
+    st.set_page_config("Langchain-Chatchat WebUI", initial_sidebar_state="expanded")
+
+    if not chat_box.chat_inited:
+        st.toast(
+            f"欢迎使用 [`Langchain-Chatchat`](https://github.com/chatchat-space/Langchain-Chatchat) ! \n\n"
+            f"当前使用模型`{LLM_MODEL}`, 您可以开始提问了."
+        )
+
+    pages = {
+        "对话": {
+            "icon": "chat",
+            "func": dialogue_page,
+        },
+        "知识库管理": {
+            "icon": "hdd-stack",
+            "func": knowledge_base_page,
+        },
+    }
+        
+    with st.sidebar:
+        st.image(
+            os.path.join(
+                "img",
+                "logo-long-chatchat-trans-v2.png"
+            ),
+            use_column_width=True
+        )
+        options = list(pages)
+        icons = [x["icon"] for x in pages.values()]
+
+        default_index = 0
+        selected_page = option_menu(
+            "",
+            options=options,
+            icons=icons,
+            # menu_icon="chat-quote",
+            default_index=default_index,
+        )
+
+    if selected_page in pages:
+        pages[selected_page]["func"](api)
+
